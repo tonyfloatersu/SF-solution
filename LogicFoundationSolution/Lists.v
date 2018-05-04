@@ -351,15 +351,21 @@ Definition bag := natlist.
 (** Complete the following definitions for the functions
     [count], [sum], [add], and [member] for bags. *)
 
-Fixpoint count (v:nat) (s:bag) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint count (v:nat) (s:bag) : nat :=
+  match v, s with
+  | v, r :: s0 => match beq_nat v r with
+                 | true => 1 + count v s0
+                 | false => count v s0
+                 end
+  | v, nil => 0
+  end.
 
 (** All these proofs can be done just by [reflexivity]. *)
 
 Example test_count1:              count 1 [1;2;3;1;4;1] = 3.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_count2:              count 6 [1;2;3;1;4;1] = 0.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (* GRADE_THEOREM 0.5: NatList.test_count2 *)
 
 (** Multiset [sum] is similar to set [union]: [sum a b] contains all
@@ -374,33 +380,34 @@ Example test_count2:              count 6 [1;2;3;1;4;1] = 0.
     think about whether [sum] can be implemented in another way --
     perhaps by using functions that have already been defined.  *)
 
-Definition sum : bag -> bag -> bag
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-
+Definition sum : bag -> bag -> bag := app.
+  
 Example test_sum1:              count 1 (sum [1;2;3] [1;4;1]) = 3.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (* GRADE_THEOREM 0.5: NatList.test_sum1 *)
 
-Definition add (v:nat) (s:bag) : bag
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition add (v:nat) (s:bag) : bag := v :: s.
 
 Example test_add1:                count 1 (add 1 [1;4;1]) = 3.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_add2:                count 5 (add 1 [1;4;1]) = 0.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (* GRADE_THEOREM 0.5: NatList.test_add1 *)
 (* GRADE_THEOREM 0.5: NatList.test_add2 *)
 
-Definition member (v:nat) (s:bag) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition member (v:nat) (s:bag) : bool :=
+  match count v s with
+  | 0 => false
+  | S _ => true
+  end.
 
 Example test_member1:             member 1 [1;4;1] = true.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (* GRADE_THEOREM 0.5: NatList.test_member1 *)
 (* GRADE_THEOREM 0.5: NatList.test_member2 *)
 
 Example test_member2:             member 2 [1;4;1] = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (bag_more_functions)  *)
@@ -409,44 +416,62 @@ Example test_member2:             member 2 [1;4;1] = false.
 (** When remove_one is applied to a bag without the number to remove,
    it should return the same bag unchanged. *)
 
-Fixpoint remove_one (v:nat) (s:bag) : bag
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint remove_one (v:nat) (s:bag) : bag :=
+  match s with
+  | h :: t => match beq_nat h v with
+             | true => t
+             | false => h :: remove_one v t
+             end
+  | nil => nil
+  end.
 
 Example test_remove_one1:
   count 5 (remove_one 5 [2;1;5;4;1]) = 0.
-  (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example test_remove_one2:
   count 5 (remove_one 5 [2;1;4;1]) = 0.
-  (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example test_remove_one3:
   count 4 (remove_one 5 [2;1;4;5;1;4]) = 2.
-  (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example test_remove_one4:
   count 5 (remove_one 5 [2;1;5;4;5;1;4]) = 1.
-  (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
-Fixpoint remove_all (v:nat) (s:bag) : bag
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint remove_all (v:nat) (s:bag) : bag :=
+  match s with
+  | h :: t => match beq_nat h v with
+             | true => remove_all v t
+             | false => h :: remove_all v t
+             end
+  | nil => nil
+  end.
 
 Example test_remove_all1:  count 5 (remove_all 5 [2;1;5;4;1]) = 0.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_remove_all2:  count 5 (remove_all 5 [2;1;4;1]) = 0.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_remove_all3:  count 4 (remove_all 5 [2;1;4;5;1;4]) = 2.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_remove_all4:  count 5 (remove_all 5 [2;1;5;4;5;1;4;5;1;4]) = 0.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
-Fixpoint subset (s1:bag) (s2:bag) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint subset (s1:bag) (s2:bag) : bool :=
+  match s1 with
+  | h :: t => match beq_nat (count h s2) 0 with
+             | true => false
+             | false => subset t (remove_one h s2)
+             end
+  | nil => true
+  end.
 
 Example test_subset1:              subset [1;2] [2;1;4;1] = true.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_subset2:              subset [1;2;2] [2;1;4;1] = false.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, recommended (bag_theorem)  *)
@@ -457,22 +482,19 @@ Example test_subset2:              subset [1;2;2] [2;1;4;1] = false.
     requires techniques you haven't learned yet.  Feel free to ask for
     help if you get stuck! *)
 
-(*
-Theorem bag_theorem : ...
+Theorem bag_theorem : forall (n : nat) (l : natlist), S (count n l) = count n (add n l).
 Proof.
-  ...
-Qed.
-*)
+  intros n l.
+  assert (beq_nat n n = true) as H.
+  { induction n as [|n' IH0].
+    - reflexivity.
+    - simpl.
+      rewrite -> IH0.
+      reflexivity. }
+  induction l as [| h0 l0 IH0].
+  - simpl. rewrite -> H. reflexivity.
+  - simpl. rewrite -> IH0. rewrite -> H. reflexivity. Qed.
 
-(** [] *)
-
-(* ################################################################# *)
-(** * Reasoning About Lists *)
-
-(** As with numbers, simple facts about list-processing
-    functions can sometimes be proved entirely by simplification.  For
-    example, the simplification performed by [reflexivity] is enough
-    for this theorem... *)
 
 Theorem nil_app : forall l:natlist,
   [] ++ l = l.
