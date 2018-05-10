@@ -842,6 +842,29 @@ Definition option_map {X Y : Type} (f : X -> Y) (xo : option X)
     throw away afterwards.) 
 *)
 
+Module ImplicitArguments.
+
+  Fixpoint filter (X:Type) (test: X->bool) (l:list X) : (list X) :=
+    match l with
+    | []     => []
+    | h :: t => if test h then h :: (filter X test t)
+               else       filter X test t
+    end.
+
+  Example test_filter1: filter nat evenb [1;2;3;4] = [2;4].
+  Proof. reflexivity.  Qed.
+  
+  Definition length_is_1 (X : Type) (l : list X) : bool :=
+    beq_nat (length l) 1.
+  
+  Example test_filter2:
+    filter (list nat) (length_is_1 nat)
+           [ [1; 2]; [3]; [4]; [5;6;7]; []; [8] ]
+    = [ [3]; [4]; [8] ].
+  Proof. reflexivity.  Qed.
+  
+End ImplicitArguments.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -896,7 +919,16 @@ Proof. reflexivity. Qed.
     situation where it would be useful for [X] and [Y] to be
     different? *)
 
-(* FILL IN HERE *)
+(* use fold to implement upper limit reach of list *)
+Definition fold_types_different (l: list nat) :=
+  fold (fun x0 x1 => (andb (blt_nat x0 10) x1)) l true.
+
+Example fold_types_different0 : fold_types_different [1; 2; 3; 4] = true.
+Proof. reflexivity. Qed.
+
+Example fold_types_different1 : fold_types_different [5; 10; 15; 20] = false.
+Proof. reflexivity. Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -967,20 +999,32 @@ Proof. reflexivity. Qed.
 Theorem fold_length_correct : forall X (l : list X),
   fold_length l = length l.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X l.
+  induction l as [| h l0 IH0 ].
+  - simpl. reflexivity.
+  - simpl. rewrite <- IH0. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars (fold_map)  *)
 (** We can also define [map] in terms of [fold].  Finish [fold_map]
     below. *)
 
-Definition fold_map {X Y:Type} (f : X -> Y) (l : list X) : list Y
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition fold_map {X Y:Type} (f : X -> Y) (l : list X) : list Y :=
+  fold (fun x0 x1 => f x0 :: x1) l [].
+
+Example fold_map0 : fold_map (fun x => x + 1) [1; 2; 3] = [2; 3; 4].
+Proof. simpl. reflexivity. Qed.
 
 (** Write down a theorem [fold_map_correct] in Coq stating that
    [fold_map] is correct, and prove it. *)
 
-(* FILL IN HERE *)
+Theorem fold_map_correct : forall X Y (l : list X) (f : X -> Y), fold_map f l = map f l.
+Proof.
+  intros X Y l f.
+  induction l as [| h l0 IH0 ].
+  - simpl. reflexivity.
+  - simpl. rewrite <- IH0. reflexivity. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (currying)  *)
@@ -1006,8 +1050,7 @@ Definition prod_curry {X Y Z : Type}
     the theorems below to show that the two are inverses. *)
 
 Definition prod_uncurry {X Y Z : Type}
-  (f : X -> Y -> Z) (p : X * Y) : Z
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  (f : X -> Y -> Z) (p : X * Y) : Z := f (fst p) (snd p).
 
 (** As a (trivial) example of the usefulness of currying, we can use it
     to shorten one of the examples that we saw above: *)
@@ -1026,13 +1069,14 @@ Theorem uncurry_curry : forall (X Y Z : Type)
                         x y,
   prod_curry (prod_uncurry f) x y = f x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y Z f x y.
+  reflexivity. Qed.
 
 Theorem curry_uncurry : forall (X Y Z : Type)
                         (f : (X * Y) -> Z) (p : X * Y),
   prod_uncurry (prod_curry f) p = f p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y Z f p. destruct p. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (nth_error_informal)  *)
@@ -1093,46 +1137,43 @@ Definition three : nat := @doit3times.
 
 (** Successor of a natural number: *)
 
-Definition succ (n : nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition succ (n : nat) : nat := fun (X : Type) (f : X -> X) (x : X) => f (n X f x).
 
 Example succ_1 : succ zero = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example succ_2 : succ one = two.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example succ_3 : succ two = three.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 (** Addition of two natural numbers: *)
 
-Definition plus (n m : nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition plus (n m : nat) : nat := fun (X : Type) (f : X -> X) (x : X) => m X f (n X f x).
 
 Example plus_1 : plus zero one = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example plus_2 : plus two three = plus three two.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example plus_3 :
   plus (plus two two) three = plus one (plus three three).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 (** Multiplication: *)
 
-Definition mult (n m : nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition mult (n m : nat) : nat := fun (X : Type) (f : X -> X) (x : X) => n X (m X f) x.
 
 Example mult_1 : mult one one = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example mult_2 : mult zero (plus three three) = zero.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example mult_3 : mult two three = plus three three.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 (** Exponentiation: *)
 
@@ -1141,17 +1182,16 @@ Proof. (* FILL IN HERE *) Admitted.
     a "Universe inconsistency" error, try iterating over a different
     type: [nat] itself is usually problematic.) *)
 
-Definition exp (n m : nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition exp (n m : nat) : nat := fun (X : Type) (f : X -> X) (x : X) => m (X -> X) (n X) f x.
 
 Example exp_1 : exp two two = plus two two.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example exp_2 : exp three two = plus (mult two (mult two two)) one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example exp_3 : exp three zero = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 End Church.
 (** [] *)
