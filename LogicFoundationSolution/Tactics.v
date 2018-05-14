@@ -1108,26 +1108,6 @@ Definition split_combine_statement : Prop := forall (X Y : Type) (l : list (X * 
   (* ("[: Prop]" means that we are giving a name to a
      logical proposition here.) *)
 
-Lemma same_length_combine_nil_l : forall (X Y : Type) (l1 : list X) (l2 : list Y),
-  length l1 = length l2 -> combine l1 l2 = [] -> l1 = [].
-Proof.
-  intros X Y l1 l2 H0 H1.
-  induction l1 as [ | h1 t1 IH0 ].
-  - reflexivity.
-  - destruct l2 as [ | h2 t2 ].
-    + inversion H0.
-    + inversion H1. Qed.
-
-Lemma same_length_combine_nil_r : forall (X Y : Type) (l1 : list X) (l2 : list Y),
-  length l1 = length l2 -> combine l1 l2 = [] -> l2 = [].
-Proof.
-  intros X Y l1 l2 H0 H1.
-  induction l2 as [ | h2 t2 IH0 ].
-  - reflexivity.
-  - destruct l1 as [ | h1 t1 ].
-    + inversion H0.
-    + inversion H1. Qed.
-
 Theorem split_combine : split_combine_statement.
 Proof.
   intros X Y l.
