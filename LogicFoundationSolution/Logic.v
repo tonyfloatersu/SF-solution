@@ -401,7 +401,8 @@ Proof.
 Fact not_implies_our_not : forall (P:Prop),
   ~ P -> (forall (Q:Prop), P -> Q).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P contra Q Cond.
+  destruct contra. apply Cond. Qed.
 (** [] *)
 
 (** This is how we use [not] to state that [0] and [1] are different
@@ -460,14 +461,16 @@ Proof.
 Theorem contrapositive : forall (P Q : Prop),
   (P -> Q) -> (~Q -> ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q H0. unfold not. intros Qnot Hp.
+  apply Qnot. apply H0. apply Hp. Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (not_both_true_and_false)  *)
 Theorem not_both_true_and_false : forall P : Prop,
   ~ (P /\ ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P. unfold not. intros [ Hp Hpnot ].
+  apply Hpnot. apply Hp. Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, advanced (informal_not_PNP)  *)
@@ -574,19 +577,38 @@ Qed.
 Theorem iff_refl : forall P : Prop,
   P <-> P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P. split.
+  - intros Pd. apply Pd.
+  - intros Pd. apply Pd. Qed.
 
 Theorem iff_trans : forall P Q R : Prop,
   (P <-> Q) -> (Q <-> R) -> (P <-> R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q R H0 H1. split.
+  - intros Pd. apply H1. apply H0. apply Pd.
+  - intros Pr. apply H0. apply H1. apply Pr. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars (or_distributes_over_and)  *)
 Theorem or_distributes_over_and : forall P Q R : Prop,
   P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q R. split.
+  - intros [ H0 | H1 ].
+    + split.
+      { left. apply H0. }
+      { left. apply H0. }
+    + inversion H1. split.
+      { right. apply H. }
+      { right. apply H0. }
+  - intros [ H0 H1 ]. destruct H0.
+    + left. apply H.
+    + destruct H1.
+      { left. apply H0. }
+      { right. split.
+        - apply H.
+        - apply H0. } Qed.
+
 (** [] *)
 
 (** Some of Coq's tactics treat [iff] statements specially, avoiding
