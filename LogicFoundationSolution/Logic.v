@@ -708,7 +708,8 @@ Proof.
 Theorem dist_not_exists : forall (X:Type) (P : X -> Prop),
   (forall x, P x) -> ~ (exists x, ~ P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X P H0. unfold not. intros [ x Hnp ].
+  apply Hnp. apply H0. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars (dist_exists_or)  *)
@@ -718,7 +719,13 @@ Proof.
 Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
   (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
 Proof.
-   (* FILL IN HERE *) Admitted.
+  intros X P Q. split.
+  - intros [ x [ HP | HQ ] ].
+    + left. exists x. apply HP.
+    + right. exists x. apply HQ.
+  - intros [ [x HP] | [x HQ] ].
+    + exists x. left. apply HP.
+    + exists x. right. apply HQ. Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -800,14 +807,44 @@ Lemma In_map_iff :
     In y (map f l) <->
     exists x, f x = y /\ In x l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A B f l y. induction l as [ | h l IH0 ].
+  - simpl. split.
+    + intros H. destruct H.
+    + intros [ x H ]. destruct H as [ HL HR ]. apply HR.
+  - simpl. split.
+    + intros [ H | H ].
+      * exists h. split.
+        { apply H. }
+        { left. reflexivity. }
+      * apply IH0 in H. inversion H as [ xA [ He Hi ]]. exists xA. split.
+        { apply He. }
+        { right. apply Hi. }
+    + intros HE. inversion HE as [ x [ H1 [ H2 | H3 ] ] ].
+      { rewrite <- H1. left. apply f_equal. apply H2. }
+      { right. apply IH0. exists x. split.
+        - apply H1.
+        - apply H3. } Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars (In_app_iff)  *)
 Lemma In_app_iff : forall A l l' (a:A),
   In a (l++l') <-> In a l \/ In a l'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A l l' a. induction l as [ | h l IH0 ]. split.
+  - simpl. intros H. right. apply H.
+  - simpl. intros H. inversion H.
+    + destruct H0.
+    + apply H0.
+  - simpl. inversion IH0. split.
+    + intros [ H1 | H2 ].
+      * left. left. apply H1.
+      * apply H in H2. apply or_assoc. inversion H2 as [ Hl | Hl' ].
+        { right. left. apply Hl. }
+        { right. right. apply Hl'. }
+    + intros [ [ H1 | H2 ] | H3 ].
+      * left. apply H1.
+      * right. apply H0. left. apply H2.
+      * right. apply H0. right. apply H3. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, recommended (All)  *)
@@ -821,15 +858,30 @@ Proof.
     lemma below.  (Of course, your definition should _not_ just
     restate the left-hand side of [All_In].) *)
 
-Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | nil => True
+  | t :: l' => P t /\ All P l'
+  end.
 
 Lemma All_In :
   forall T (P : T -> Prop) (l : list T),
     (forall x, In x l -> P x) <->
     All P l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction l as [ | h l IH0 ].
+  - simpl. split.
+    + intros H. reflexivity.
+    + intros H x contra. destruct contra.
+  - simpl. split.
+    + intros H. split.
+      * apply H. left. reflexivity.
+      * apply IH0. intros x H0. apply H. right. apply H0.
+    + intros [ H0 H1 ] x [ H2 | H3 ].
+      * rewrite <- H2. apply H0.
+      * apply IH0.
+        { apply H1. }
+        { apply H3. } Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars (combine_odd_even)  *)
