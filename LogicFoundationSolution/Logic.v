@@ -816,7 +816,7 @@ Proof.
       * exists h. split.
         { apply H. }
         { left. reflexivity. }
-      * apply IH0 in H. inversion H as [ xA [ He Hi ]]. exists xA. split.
+      * apply IH0 in H. inversion H as [ xA [ He Hi ] ]. exists xA. split.
         { apply He. }
         { right. apply Hi. }
     + intros HE. inversion HE as [ x [ H1 [ H2 | H3 ] ] ].
@@ -1167,8 +1167,19 @@ Definition tr_rev {X} (l : list X) : list X :=
     call); a decent compiler will generate very efficient code in this
     case.  Prove that the two definitions are indeed equivalent. *)
 
+Lemma tr_rev_app : forall (X : Type) (l1 l2 : list X), rev_append l1 l2 = (rev l1) ++ l2.
+Proof.
+  intros X l1. induction l1 as [ | h1 l1 IH1 ].
+  - reflexivity.
+  - intros l2. simpl. rewrite IH1. rewrite <- app_assoc. simpl. reflexivity. Qed.
+
 Lemma tr_rev_correct : forall X, @tr_rev X = @rev X.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros X. apply functional_extensionality.
+  unfold tr_rev. induction x as [ | h x IH0 ].
+  - reflexivity.
+  - simpl. apply tr_rev_app. Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -1202,8 +1213,11 @@ Theorem evenb_double_conv : forall n,
   exists k, n = if evenb n then double k
                 else S (double k).
 Proof.
-  (* Hint: Use the [evenb_S] lemma from [Induction.v]. *)
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [ | n IH0 ].
+  - simpl. exists 0. reflexivity.
+  - rewrite evenb_S. destruct IH0. destruct (evenb n).
+    + simpl. rewrite H. exists x. reflexivity.
+    + simpl. rewrite H. exists (S x). reflexivity. Qed.
 (** [] *)
 
 Theorem even_bool_prop : forall n,
@@ -1321,12 +1335,30 @@ Proof. apply even_bool_prop. reflexivity. Qed.
 Lemma andb_true_iff : forall b1 b2:bool,
   b1 && b2 = true <-> b1 = true /\ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b1 b2. split.
+  - intros H. split.
+    + rewrite andb_commutative in H. apply andb_true_elim2 in H. apply H.
+    + apply andb_true_elim2 in H. apply H.
+  - intros [ H0 H1 ]. rewrite H0. rewrite H1. reflexivity. Qed.
 
 Lemma orb_true_iff : forall b1 b2,
   b1 || b2 = true <-> b1 = true \/ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [] [].
+  - split.
+    + simpl. intros H. right. reflexivity.
+    + simpl. intros H. reflexivity.
+  - split.
+    + intros H. left. reflexivity.
+    + intros H. reflexivity.
+  - split.
+    + intros H. right. reflexivity.
+    + intros H. reflexivity.
+  - split.
+    + intros H. destruct H. right. reflexivity.
+    + intros H. destruct H.
+      * destruct H. reflexivity.
+      * destruct H. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (beq_nat_false_iff)  *)
@@ -1337,7 +1369,11 @@ Proof.
 Theorem beq_nat_false_iff : forall x y : nat,
   beq_nat x y = false <-> x <> y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x y. split.
+  - intros H0 H1. apply beq_nat_true_iff in H1. rewrite H0 in H1. inversion H1.
+  - unfold not. intros H0. destruct (beq_nat x y) eqn : x_eq_y.
+    + apply beq_nat_true in x_eq_y. apply H0 in x_eq_y. inversion x_eq_y.
+    + reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars (beq_list)  *)
@@ -1348,15 +1384,38 @@ Proof.
     definition is correct, prove the lemma [beq_list_true_iff]. *)
 
 Fixpoint beq_list {A : Type} (beq : A -> A -> bool)
-                  (l1 l2 : list A) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+         (l1 l2 : list A) : bool :=
+  match l1, l2 with
+  | h1 :: l1', h2 :: l2' => beq h1 h2 && beq_list beq l1' l2'
+  | nil, h2 :: l2' => false
+  | h1 :: l1', nil => false
+  | _, _ => true
+  end.
 
 Lemma beq_list_true_iff :
   forall A (beq : A -> A -> bool),
     (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, beq_list beq l1 l2 = true <-> l1 = l2.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros A beq H0. induction l1 as [ | h1 l1 IH1 ].
+  - induction l2 as [ | h2 l2 IH2 ].
+    * simpl. split.
+      { intros. reflexivity. }
+      { intros. reflexivity. }
+    * simpl. split.
+      { intros FH. inversion FH. }
+      { intros FH. inversion FH. }
+  - induction l2 as [ | h2 l2 IH2 ].
+    * simpl. split.
+      { intros FH. inversion FH. }
+      { intros FH. inversion FH. }
+    * split.
+      { intros H1. inversion H1. destruct (beq h1 h2) eqn : heq.
+        - simpl in H2. apply IH1 in H2. rewrite H2. apply H0 in heq. rewrite heq. reflexivity.
+        - simpl in H2. inversion H2. }
+      { intros H1. inversion H1. simpl. destruct (beq h2 h2) eqn : heq2.
+        - simpl. rewrite <- H3. apply IH1. reflexivity.
+        - simpl. destruct heq2. apply H0. reflexivity. } Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, recommended (All_forallb)  *)
