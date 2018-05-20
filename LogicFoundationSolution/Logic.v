@@ -1434,7 +1434,15 @@ Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
 Theorem forallb_true_iff : forall X test (l : list X),
    forallb test l = true <-> All (fun x => test x = true) l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test. induction l as [ | h l IH0 ].
+  - simpl. split.
+    + intros. reflexivity.
+    + reflexivity.
+  - simpl. split.
+    + intros H0. split.
+      * rewrite andb_commutative in H0. apply andb_true_elim2 in H0. apply H0.
+      * apply andb_true_elim2 in H0. apply IH0 in H0. apply H0.
+    + intros [ H0 H1 ]. rewrite H0. simpl. apply IH0 in H1. apply H1. Qed.
 
 (** Are there any important properties of the function [forallb] which
     are not captured by this specification? *)
@@ -1570,7 +1578,8 @@ Qed.
 Theorem excluded_middle_irrefutable: forall (P:Prop),
   ~ ~ (P \/ ~ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P contra. unfold not in contra. apply contra.
+  right. intros Hp. apply contra. left. apply Hp. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (not_exists_dist)  *)
@@ -1590,7 +1599,9 @@ Theorem not_exists_dist :
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold excluded_middle. intros Hem X P contra x. destruct (Hem (P x)).
+  - apply H.
+  - destruct contra. exists x. apply H. Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, optional (classical_axioms)  *)
@@ -1616,6 +1627,68 @@ Definition de_morgan_not_and_not := forall P Q:Prop,
 Definition implies_to_or := forall P Q:Prop,
   (P->Q) -> (~P\/Q).
 
-(* FILL IN HERE *)
+Theorem double_neg_excluded_middle : double_negation_elimination <-> excluded_middle.
+Proof.
+  unfold double_negation_elimination. unfold excluded_middle. split.
+  - intros Hdouble P. apply Hdouble. apply excluded_middle_irrefutable.
+  - intros Hexclude P contra. destruct (Hexclude P) as [ HP | Hcontra ].
+    + apply HP.
+    + destruct contra. apply Hcontra. Qed.
+
+Theorem peirce_double_neg : peirce <-> double_negation_elimination.
+Proof.
+  unfold peirce. unfold double_negation_elimination. split.
+  - intros Hpeirce P. unfold not. intros H0. apply (Hpeirce P False).
+    intros H1. induction H0. apply H1.
+  - intros Hdouble P Q Hpeirce. apply (Hdouble P). intros H0. apply H0.
+    apply Hpeirce. intros HP. apply (Hdouble Q). intros H1. apply H0. apply HP. Qed.
+
+Lemma double_neg__de_morgan : double_negation_elimination -> de_morgan_not_and_not.
+Proof.
+  unfold double_negation_elimination. unfold de_morgan_not_and_not. unfold not.
+  intros Hdouble P Q H0. apply Hdouble. intros H1. apply H0. split.
+  - intros HP. apply H1. left. apply HP.
+  - intros HQ. apply H1. right. apply HQ. Qed.
+
+Lemma de_morgan__excluded_middle : de_morgan_not_and_not -> excluded_middle.
+Proof.
+  unfold de_morgan_not_and_not. unfold excluded_middle. intros Hde P.
+  apply (Hde P (~ P)). unfold not. intros [ H0 H1 ]. apply H1. apply H0. Qed.
+
+Theorem double_neg_de_morgan : double_negation_elimination <-> de_morgan_not_and_not.
+Proof.
+  split.
+  - apply double_neg__de_morgan.
+  - intros H. apply double_neg_excluded_middle. apply de_morgan__excluded_middle.
+    apply H. Qed.
+
+Theorem de_morgan_excluded_middle : de_morgan_not_and_not <-> excluded_middle.
+Proof.
+  split.
+  - apply de_morgan__excluded_middle.
+  - intros H. apply double_neg__de_morgan.
+    apply double_neg_excluded_middle. apply H. Qed.
+
+Lemma implies_to_or__excluded_middle : implies_to_or -> excluded_middle.
+Proof.
+  unfold implies_to_or. unfold excluded_middle. unfold not. intros Himplies P.
+  destruct (Himplies P P) as [ H0 | H1 ].
+  - intros H. apply H.
+  - right. apply H0.
+  - left. apply H1. Qed.
+
+Lemma excluded_middle__implies_to_or : excluded_middle -> implies_to_or.
+Proof.
+  unfold excluded_middle. unfold implies_to_or. unfold not. intros Hex P Q H0.
+  destruct (Hex P) as [ H1 | H2 ].
+  - right. apply H0. apply H1.
+  - left. apply H2. Qed.
+
+Theorem excluded_middle_implies_to_or : excluded_middle <-> implies_to_or.
+Proof.
+  split.
+  - intros H. apply excluded_middle__implies_to_or. apply H.
+  - intros H. apply implies_to_or__excluded_middle. apply H. Qed.
+
 (** [] *)
 
