@@ -676,7 +676,9 @@ Proof.
 Theorem leb_iff : forall n m,
   leb n m = true <-> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m. split.
+  - apply leb_complete.
+  - apply leb_correct. Qed.
 (** [] *)
 
 Module R.
@@ -706,6 +708,9 @@ Inductive R : nat -> nat -> nat -> Prop :=
       sentence) explain your answer.
 
 (* FILL IN HERE *)
+1. R 1 1 2 Providable
+2. no change
+3. no change, can be derived from c2 c3
 *)
 (** [] *)
 
@@ -714,12 +719,22 @@ Inductive R : nat -> nat -> nat -> Prop :=
     Figure out which function; then state and prove this equivalence
     in Coq? *)
 
-Definition fR : nat -> nat -> nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition fR : nat -> nat -> nat := fun x0 => fun x1 => x0 + x1.
 
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros m n o. unfold fR. split.
+  - intros H. induction H.
+    + reflexivity.
+    + simpl. rewrite IHR. reflexivity.
+    + rewrite <- plus_n_Sm. rewrite IHR. reflexivity.
+    + inversion IHR. rewrite <- plus_n_Sm in H1. inversion H1. reflexivity.
+    + rewrite <- IHR. rewrite plus_comm. reflexivity.
+  - intros H. induction H. induction m as [ | m IH0 ].
+    + simpl. induction n as [ | n IH1 ].
+      * apply c1.
+      * apply c3. apply IH1.
+    + simpl. apply c2. apply IH0. Qed.
 (** [] *)
 
 End R.
@@ -760,7 +775,23 @@ End R.
       is a subsequence of [l3], then [l1] is a subsequence of [l3].
       Hint: choose your induction carefully! *)
 
-(* FILL IN HERE *)
+Inductive subseq { X : Type } : list X -> list X -> Prop :=
+| s1 : forall l, subseq [] l
+| s2 : forall (x : X) (mat tbm : list X), subseq mat tbm -> subseq mat (x :: tbm)
+| s3 : forall (x : X) (mat tbm : list X), subseq mat tbm -> subseq (x :: mat) (x :: tbm).
+
+Theorem subseq_refl : forall (X : Type) (x : list X), subseq x x.
+Proof.
+  intros X lx. induction lx as [ | x lx IH0 ].
+  - apply s1.
+  - apply s3. apply IH0. Qed.
+
+Theorem subseq_app : forall (X : Type) (l1 l2 l3 : list X), subseq l1 l2 -> subseq l1 (l2 ++ l3).
+Proof.
+  intros X l1 l2 l3 H. induction H.
+  - apply s1.
+  - simpl. apply s2. apply IHsubseq.
+  - simpl. apply s3. apply IHsubseq. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (R_provability2)  *)
