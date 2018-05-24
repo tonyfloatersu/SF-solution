@@ -1019,13 +1019,15 @@ Qed.
 Lemma empty_is_empty : forall T (s : list T),
   ~ (s =~ EmptySet).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s H. inversion H. Qed.
 
 Lemma MUnion' : forall T (s : list T) (re1 re2 : @reg_exp T),
   s =~ re1 \/ s =~ re2 ->
   s =~ Union re1 re2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s re1 re2 [ H0 | H1 ].
+  - apply MUnionL. apply H0.
+  - apply MUnionR. apply H1. Qed.
 
 (** The next lemma is stated in terms of the [fold] function from the
     [Poly] chapter: If [ss : list (list T)] represents a sequence of
@@ -1036,7 +1038,11 @@ Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp),
   (forall s, In s ss -> s =~ re) ->
   fold app ss [] =~ Star re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T ss re H0. induction ss as [ | hs ss IH0 ].
+  - simpl. apply MStar0.
+  - simpl. apply MStarApp.
+    + apply H0. simpl. left. reflexivity.
+    + apply IH0. intros s H1. apply H0. simpl. right. apply H1. Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (reg_exp_of_list_spec)  *)
@@ -1047,7 +1053,20 @@ Proof.
 Lemma reg_exp_of_list_spec : forall T (s1 s2 : list T),
   s1 =~ reg_exp_of_list s2 <-> s1 = s2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - generalize dependent s4. induction s5 as [ | h5 s5 IH5 ].
+    + intros s4 H. inversion H. reflexivity.
+    + intros s4 H. inversion H. inversion H3. simpl. apply f_equal.
+      apply IH5. apply H4.
+  - generalize dependent s5. induction s4 as [ | h4 s4 IH4 ].
+    + intros s5 H. rewrite <- H. apply MEmpty.
+    + intros s5 H.
+      assert (AH : h4 :: s4 = [h4] ++ s4).
+      { reflexivity. }
+      rewrite AH. rewrite <- H. apply MApp.
+      * apply MChar.
+      * apply IH4. reflexivity. Qed.
+
 (** [] *)
 
 (** Since the definition of [exp_match] has a recursive
@@ -1129,13 +1148,44 @@ Qed.
     regular expression matches some string. Prove that your function
     is correct. *)
 
-Fixpoint re_not_empty {T : Type} (re : @reg_exp T) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint re_not_empty {T : Type} (re : @reg_exp T) : bool :=
+  match re with
+  | EmptySet => false
+  | EmptyStr => true
+  | Char x => true
+  | App re1 re2 => re_not_empty re1 && re_not_empty re2
+  | Union re1 re2 => re_not_empty re1 || re_not_empty re2
+  | Star re => true
+  end.
 
 Lemma re_not_empty_correct : forall T (re : @reg_exp T),
   (exists s, s =~ re) <-> re_not_empty re = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T re. split.
+  - intros [ s H ]. induction H.
+    + reflexivity.
+    + reflexivity.
+    + simpl. rewrite IHexp_match1. rewrite IHexp_match2. reflexivity.
+    + simpl. rewrite IHexp_match. reflexivity.
+    + simpl. rewrite IHexp_match. destruct (re_not_empty re1).
+      * reflexivity.
+      * reflexivity.
+    + reflexivity.
+    + reflexivity.
+  - intros H. induction re.
+    + inversion H.
+    + exists []. apply MEmpty.
+    + exists [t]. apply MChar.
+    + inversion H. apply andb_true_iff in H1. inversion H1.
+      apply IHre1 in H0. apply IHre2 in H2.
+      inversion H0. inversion H2. exists (x ++ x0). apply MApp.
+      * apply H3.
+      * apply H4.
+    + inversion H. apply orb_true_iff in H1. inversion H1.
+      * apply IHre1 in H0. inversion H0. exists x. apply MUnionL. apply H2.
+      * apply IHre2 in H0. inversion H0. exists x. apply MUnionR. apply H2.
+    + exists []. apply MStar0. Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -1273,7 +1323,26 @@ Lemma MStar'' : forall T (s : list T) (re : reg_exp),
     s = fold app ss []
     /\ forall s', In s' ss -> s' =~ re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s re H. remember (Star re) as sre. induction H.
+  - inversion Heqsre.
+  - inversion Heqsre.
+  - inversion Heqsre.
+  - inversion Heqsre.
+  - inversion Heqsre.
+  - exists []. simpl. inversion Heqsre. split.
+    + reflexivity.
+    + intros s' Hcontra. inversion Hcontra.
+  - inversion Heqsre. rewrite H2 in *. generalize dependent s4. induction s5 as [ | h5 s5 IH5 ].
+    + intros s4 Hs4 Hre. rewrite app_nil_r. exists [s4]. simpl. rewrite app_nil_r. split.
+      * reflexivity.
+      * intros s' Hconcat. destruct Hconcat.
+        { rewrite <- H. apply Hs4. }
+        { inversion H. }
+    + intros s4 Hs4 Hwhat. apply IHexp_match2 in Heqsre. destruct Heqsre. exists (s4 :: x). destruct H. split.
+      * simpl. rewrite H. reflexivity.
+      * simpl. intros s' [ Heq1 | Heq2 ].
+        { rewrite <- Heq1. apply Hs4. }
+        { apply H1 in Heq2. apply Heq2. } Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (pumping)  *)
