@@ -776,22 +776,22 @@ End R.
       Hint: choose your induction carefully! *)
 
 Inductive subseq { X : Type } : list X -> list X -> Prop :=
-| s1 : forall l, subseq [] l
-| s2 : forall (x : X) (mat tbm : list X), subseq mat tbm -> subseq mat (x :: tbm)
-| s3 : forall (x : X) (mat tbm : list X), subseq mat tbm -> subseq (x :: mat) (x :: tbm).
+| sub1 : forall l, subseq [] l
+| sub2 : forall (x : X) (mat tbm : list X), subseq mat tbm -> subseq mat (x :: tbm)
+| sub3 : forall (x : X) (mat tbm : list X), subseq mat tbm -> subseq (x :: mat) (x :: tbm).
 
 Theorem subseq_refl : forall (X : Type) (x : list X), subseq x x.
 Proof.
   intros X lx. induction lx as [ | x lx IH0 ].
-  - apply s1.
-  - apply s3. apply IH0. Qed.
+  - apply sub1.
+  - apply sub3. apply IH0. Qed.
 
 Theorem subseq_app : forall (X : Type) (l1 l2 l3 : list X), subseq l1 l2 -> subseq l1 (l2 ++ l3).
 Proof.
   intros X l1 l2 l3 H. induction H.
-  - apply s1.
-  - simpl. apply s2. apply IHsubseq.
-  - simpl. apply s3. apply IHsubseq. Qed.
+  - apply sub1.
+  - simpl. apply sub2. apply IHsubseq.
+  - simpl. apply sub3. apply IHsubseq. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (R_provability2)  *)
@@ -1054,18 +1054,18 @@ Lemma reg_exp_of_list_spec : forall T (s1 s2 : list T),
   s1 =~ reg_exp_of_list s2 <-> s1 = s2.
 Proof.
   split.
-  - generalize dependent s4. induction s5 as [ | h5 s5 IH5 ].
-    + intros s4 H. inversion H. reflexivity.
-    + intros s4 H. inversion H. inversion H3. simpl. apply f_equal.
-      apply IH5. apply H4.
-  - generalize dependent s5. induction s4 as [ | h4 s4 IH4 ].
-    + intros s5 H. rewrite <- H. apply MEmpty.
-    + intros s5 H.
-      assert (AH : h4 :: s4 = [h4] ++ s4).
+  - generalize dependent s1. induction s2 as [ | h2 s2 IH2 ].
+    + intros s1 H. inversion H. reflexivity.
+    + intros s1 H. inversion H. inversion H3. simpl. apply f_equal.
+      apply IH2. apply H4.
+  - generalize dependent s2. induction s1 as [ | h1 s1 IH1 ].
+    + intros s2 H. rewrite <- H. apply MEmpty.
+    + intros s2 H.
+      assert (AH : h1 :: s1 = [h1] ++ s1).
       { reflexivity. }
       rewrite AH. rewrite <- H. apply MApp.
       * apply MChar.
-      * apply IH4. reflexivity. Qed.
+      * apply IH1. reflexivity. Qed.
 
 (** [] *)
 
@@ -1332,16 +1332,16 @@ Proof.
   - exists []. simpl. inversion Heqsre. split.
     + reflexivity.
     + intros s' Hcontra. inversion Hcontra.
-  - inversion Heqsre. rewrite H2 in *. generalize dependent s4. induction s5 as [ | h5 s5 IH5 ].
-    + intros s4 Hs4 Hre. rewrite app_nil_r. exists [s4]. simpl. rewrite app_nil_r. split.
+  - inversion Heqsre. rewrite H2 in *. generalize dependent s1. induction s2 as [ | h2 s2 IH2 ].
+    + intros s1 Hs1 Hre. rewrite app_nil_r. exists [s1]. simpl. rewrite app_nil_r. split.
       * reflexivity.
       * intros s' Hconcat. destruct Hconcat.
-        { rewrite <- H. apply Hs4. }
+        { rewrite <- H. apply Hs1. }
         { inversion H. }
-    + intros s4 Hs4 Hwhat. apply IHexp_match2 in Heqsre. destruct Heqsre. exists (s4 :: x). destruct H. split.
+    + intros s1 Hs1 Hwhat. apply IHexp_match2 in Heqsre. destruct Heqsre. exists (s1 :: x). destruct H. split.
       * simpl. rewrite H. reflexivity.
       * simpl. intros s' [ Heq1 | Heq2 ].
-        { rewrite <- Heq1. apply Hs4. }
+        { rewrite <- Heq1. apply Hs1. }
         { apply H1 in Heq2. apply Heq2. } Qed.
 (** [] *)
 
@@ -1425,7 +1425,57 @@ Proof.
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
   - (* MEmpty *)
     simpl. omega.
-  (* FILL IN HERE *) Admitted.
+  - simpl. omega.
+  - intros H. simpl in H. rewrite app_length in H.
+    assert (Hassert0 : pumping_constant re1 <= length s1 \/ pumping_constant re2 <= length s2).
+    { omega. }
+    destruct Hassert0 as [ Ha0 | Ha0 ].
+    + apply IH1 in Ha0. destruct Ha0 as [ sx2 [ sx3 [ sx4 [ Ha01 [ Ha02 Ha03 ] ] ] ] ].
+      rewrite Ha01. exists sx2. exists sx3. exists (sx4 ++ s2). split.
+      * rewrite app_assoc. rewrite app_assoc. rewrite app_assoc. reflexivity.
+      * split.
+        { apply Ha02. }
+        { intros m. rewrite app_assoc. rewrite app_assoc. apply MApp.
+          - rewrite <- app_assoc. apply Ha03.
+          - apply Hmatch2. }
+    + apply IH2 in Ha0. destruct Ha0 as [ sx0 [ sx3 [ sx4 [ Ha01 [ Ha02 Ha03 ] ] ] ] ].
+      exists (s1 ++ sx0). exists sx3. exists sx4. rewrite <- app_assoc. split.
+      * rewrite Ha01. reflexivity.
+      * split.
+        { apply Ha02. }
+        { intros m. rewrite <- app_assoc. apply MApp.
+          - apply Hmatch1.
+          - apply Ha03. }
+  - simpl. intros H. assert (Hassert : pumping_constant re1 <= length s1). omega.
+    apply IH in Hassert. destruct Hassert as [ s2 [ s3 [ s4 [ H1 [ H2 H3 ] ] ] ] ].
+    exists s2. exists s3. exists s4. split.
+    + apply H1.
+    + split.
+      * apply H2.
+      * intros m. apply MUnionL. apply H3.
+  - simpl. intros. assert (Hassert : pumping_constant re2 <= length s2). omega.
+    apply IH in Hassert. destruct Hassert as [ s1 [ s0 [ s3 [ H1 [ H2 H3 ] ] ] ] ].
+    exists s1. exists s0. exists s3. split.
+    + apply H1.
+    + split.
+      * apply H2.
+      * intros m. apply MUnionR. apply H3.
+  - simpl. omega.
+  - rewrite app_length. intros H. exists []. exists (s1 ++ s2). exists []. split.
+    + simpl. rewrite app_nil_r. reflexivity.
+    + split.
+      * rewrite <- app_length in H. destruct (s1 ++ s2).
+        { simpl in H. omega. }
+        { intros Hcontra. inversion Hcontra. }
+      * simpl. intros m. rewrite app_nil_r. induction m as [ | m IHm ].
+        { simpl. apply MStar0. }
+        { simpl. apply star_app.
+          - assert (H__assert : s1 ++ s2 =~ Star re).
+            { apply MStarApp.
+            + apply Hmatch1.
+            + apply Hmatch2. }
+            apply H__assert.
+          - apply IHm. } Qed.
 
 End Pumping.
 (** [] *)
