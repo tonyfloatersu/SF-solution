@@ -1547,7 +1547,13 @@ Qed.
 (** **** Exercise: 2 stars, recommended (reflect_iff)  *)
 Theorem reflect_iff : forall P b, reflect P b -> (P <-> b = true).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P b Hrefl. split.
+  - intros HP. inversion Hrefl.
+    + reflexivity.
+    + unfold not in H. apply H in HP. inversion HP.
+  - intros HB. inversion Hrefl.
+    + apply H.
+    + rewrite HB in Hrefl. inversion Hrefl. apply H1. Qed.
 (** [] *)
 
 (** The advantage of [reflect] over the normal "if and only if"
@@ -1598,7 +1604,13 @@ Fixpoint count n l :=
 Theorem beq_natP_practice : forall n l,
   count n l = 0 -> ~(In n l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n l. induction l as [ | h l IH0 ].
+  - simpl. intros H Hnot. inversion Hnot.
+  - simpl. destruct (beq_natP n h) as [ H | H ].
+    + simpl. intros Hcontra Hnot. inversion Hcontra.
+    + simpl. intros Hcontra [ Hnot | Hnot ].
+      * symmetry in Hnot. apply H in Hnot. inversion Hnot.
+      * apply IH0 in Hcontra. apply Hcontra in Hnot. inversion Hnot. Qed.
 (** [] *)
 
 (** In this small example, this technique gives us only a rather small
@@ -1631,8 +1643,10 @@ Proof.
     [nostutter]. *)
 
 Inductive nostutter {X:Type} : list X -> Prop :=
- (* FILL IN HERE *)
-.
+| nost__empty : nostutter [ ]
+| nost__one : forall (t : X), nostutter [t]
+| nost__list : forall (t0 t1 : X) (lst : list X), t0 <> t1 -> nostutter (t1 :: lst) -> nostutter (t0 :: t1 :: lst).
+
 (** Make sure each of these tests succeeds, but feel free to change
     the suggested proof (in comments) if the given one doesn't work
     for you.  Your definition might be different from ours and still
@@ -1644,27 +1658,34 @@ Inductive nostutter {X:Type} : list X -> Prop :=
     example with more basic tactics.)  *)
 
 Example test_nostutter_1: nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
+Proof.
+  repeat constructor; apply beq_nat_false_iff; auto. Qed.
 (* 
   Proof. repeat constructor; apply beq_nat_false_iff; auto.
   Qed.
 *)
 
 Example test_nostutter_2:  nostutter (@nil nat).
-(* FILL IN HERE *) Admitted.
+Proof.
+  repeat constructor; apply beq_nat_false_iff; auto. Qed.
 (* 
   Proof. repeat constructor; apply beq_nat_false_iff; auto.
   Qed.
 *)
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
+Proof.
+  repeat constructor; apply beq_nat_false_iff; auto. Qed.
 (* 
   Proof. repeat constructor; apply beq_nat_false; auto. Qed.
 *)
 
 Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
+Proof. intro.
+  repeat match goal with
+    h: nostutter _ |- _ => inversion h; clear h; subst
+  end.
+  contradiction H1; auto. Qed.
 (* 
   Proof. intro.
   repeat match goal with
