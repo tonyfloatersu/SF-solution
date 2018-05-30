@@ -1725,7 +1725,50 @@ Proof. intro.
     to be a merge of two others.  Do this with an inductive relation,
     not a [Fixpoint].)  *)
 
-(* FILL IN HERE *)
+Inductive InOrderMerge { T : Type } : list T -> list T -> list T -> Prop :=
+| IOM__lhs : forall (t : list T), InOrderMerge t t [ ]
+| IOM__rhs : forall (t : list T), InOrderMerge t [ ] t
+| IOM__lapp : forall (l1 l2 l : list T) (h : T), InOrderMerge l l1 l2 -> InOrderMerge (h :: l) (h :: l1) l2
+| IOM__rapp : forall (l1 l2 l : list T) (h : T), InOrderMerge l l1 l2 -> InOrderMerge (h :: l) l1 (h :: l2).
+
+Example exp_iom : InOrderMerge [1; 4; 6; 2; 3] [1; 6; 2] [4; 3].
+Proof.
+  apply IOM__lapp. apply IOM__rapp. apply IOM__lapp. apply IOM__lapp. apply IOM__rhs. Qed.
+
+Lemma all_true_filter : forall ( T : Type ) ( l : list T ) ( test : T -> bool ),
+    All (fun ( x : T ) => test x = true) l -> filter test l = l.
+Proof.
+  intros T l test. induction l as [ | h l IHl ].
+    + simpl. intros. reflexivity.
+    + simpl. intros [ H0 H1 ]. rewrite H0. apply IHl in H1. rewrite H1. reflexivity. Qed.
+
+Lemma all_false_filter : forall ( T : Type ) ( l : list T ) ( test : T -> bool ),
+    All (fun ( x : T ) => test x = false) l -> filter test l = [ ].
+Proof.
+  intros T l test. induction l as [ | h l IHl ].
+  + simpl. intros. reflexivity.
+  + simpl. intros [ H0 H1 ]. rewrite H0. apply IHl in H1. apply H1. Qed.
+
+Theorem filter_challenge : forall ( T : Type ) ( l l1 l2 : list T ) ( test : T -> bool ),
+    InOrderMerge l l1 l2
+    /\ All (fun (x : T) => test x = true) l1
+    /\ All (fun (x : T) => test x = false) l2
+    -> filter test l = l1.
+Proof.
+  intros T l l1 l2 test [ H0 [ H1 H2 ] ].
+  induction H0.
+  - apply all_true_filter in H1. apply H1.
+  - apply all_false_filter in H2. apply H2.
+  - inversion H1. simpl. rewrite H.
+    assert (Hassert : forall (la lb : list T) (h : T), la = lb -> h :: la = h :: lb).
+    { intros la lb h0 Ha0. rewrite Ha0. reflexivity. }
+    apply Hassert. apply IHInOrderMerge.
+    + apply H3.
+    + apply H2.
+  - inversion H2. simpl. rewrite H. apply IHInOrderMerge.
+    + apply H1.
+    + apply H3. Qed.
+
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (filter_challenge_2)  *)
