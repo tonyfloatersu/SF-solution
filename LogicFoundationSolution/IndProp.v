@@ -1777,7 +1777,35 @@ Proof.
     evaluates to [true] on all their members, [filter test l] is the
     longest.  Formalize this claim and prove it. *)
 
-(* FILL IN HERE *)
+Inductive subsatisfy { X : Type } : ( X -> bool ) -> list X -> list X -> Prop :=
+| sub__null : forall f l, subsatisfy f [ ] l
+| sub__app : forall x f l ssub, subsatisfy f ssub l -> subsatisfy f ssub (x :: l)
+| sub__sat : forall x f l ssub, subsatisfy f ssub l
+                         -> f x = true
+                         -> subsatisfy f (x :: ssub) (x :: l).
+
+Lemma subsatisfy_filter : forall ( T : Type ) ( l : list T ) ( f : T -> bool ),
+    subsatisfy f (filter f l) l.
+Proof.
+  intros T l f. induction l as [ | h l IH ].
+  - simpl. apply sub__null.
+  - simpl. destruct (f h) eqn : Fh.
+    + apply sub__sat.
+      * apply IH.
+      * apply Fh.
+    + apply sub__app. apply IH. Qed.
+
+Theorem filter_challenge2 : forall ( T : Type ) ( l sub : list T ) ( f : T -> bool ),
+    subsatisfy f sub l -> length sub <= length (filter f l).
+Proof.
+  intros T l sub f H__sub. induction H__sub as [ | x f l sub H__sub IH
+                                             | x f l sub H__sub IH H__fx ].
+  - simpl. apply le_0_n.
+  - rewrite IH. simpl. destruct (f x) eqn : Fx.
+    + simpl. apply le_S. reflexivity.
+    + reflexivity.
+  - simpl. rewrite H__fx. simpl. apply le_n_S. apply IH. Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (palindromes)  *)
