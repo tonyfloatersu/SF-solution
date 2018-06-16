@@ -1830,7 +1830,25 @@ Proof.
        forall l, pal l -> l = rev l.
 *)
 
-(* FILL IN HERE *)
+Inductive pal { X : Type } : list X -> Prop :=
+| pal__null : pal [ ]
+| pal__single : forall x, pal [x]
+| pal__list : forall l x, pal l -> pal (x :: l ++ [x]).
+
+Theorem pal_app_rev : forall ( X : Type ) ( l : list X ), pal (l ++ rev l).
+Proof.
+  intros X l. induction l as [ | h0 l0 IH ].
+  - simpl. apply pal__null.
+  - simpl. rewrite app_assoc with (l := l0) (m := rev l0) (n := [ h0 ]).
+    apply pal__list. apply IH. Qed.
+
+Theorem pal_rev : forall ( X : Type ) ( l : list X ), pal l -> l = rev l.
+Proof.
+  intros X l H. induction H as [ | x H | l x H IH ].
+  - reflexivity.
+  - reflexivity.
+  - simpl. rewrite rev_app_distr. simpl. rewrite <- IH. reflexivity. Qed.
+
 (** [] *)
 
 (** **** Exercise: 5 stars, optional (palindrome_converse)  *)
