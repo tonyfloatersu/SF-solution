@@ -1857,9 +1857,46 @@ Proof.
     previous exercise, prove that
 
      forall l, l = rev l -> pal l.
-*)
+ *)
 
-(* FILL IN HERE *)
+Lemma rev_injective : forall ( X : Type ) ( l0 l1 : list X ), rev l0 = rev l1 <-> l0 = l1.
+Proof.
+  intros X l0 l1. split.
+  - intros H. apply f_equal with (B := list X) (f := rev) in H.
+    rewrite rev_involutive in H. rewrite rev_involutive in H. apply H.
+  - intros H. apply f_equal with (f := rev) in H. apply H. Qed.
+
+Lemma app_same : forall ( X : Type ) ( l0 l1 : list X ) ( x : X ), l0 ++ [x] = l1 ++ [x] -> l0 = l1.
+Proof.
+  intros X l0 l1 x H. apply rev_injective with (l0 := l0 ++ [x]) in H.
+  rewrite rev_app_distr in H. rewrite rev_app_distr in H. simpl in H.
+  inversion H. apply rev_injective with (l0 := l0) in H1. apply H1. Qed.
+
+Inductive list_property { X: Type } : list X -> Prop :=
+| lp__null : list_property []
+| lp__single : forall x, list_property [x]
+| lp__list : forall x y l, list_property l -> list_property (x :: l ++ [y]).
+
+Theorem list_prop_apply_all : forall ( X : Type ) ( l : list X ), list_property l.
+Proof.
+  intros X l. induction l as [ | h l IH ].
+  - apply lp__null.
+  - generalize dependent h. induction IH.
+    + apply lp__single.
+    + intros h. apply lp__list with (l := [ ]). apply lp__null.
+    + intros h. assert (h :: x :: l ++ [y] = h :: (x :: l) ++ [y]) as Htemp. simpl. reflexivity.
+      rewrite Htemp. apply lp__list. apply IHIH. Qed.
+
+Theorem palindrome_converse : forall ( X : Type ) ( l : list X ), l = rev l -> pal l.
+Proof.
+  intros X l Hrev. assert (list_property l) as H__listprop. apply list_prop_apply_all.
+  induction H__listprop.
+  - apply pal__null.
+  - apply pal__single.
+  - simpl in Hrev. rewrite rev_app_distr in Hrev. simpl in Hrev.
+    inversion Hrev. apply pal__list. apply IHH__listprop.
+    apply app_same with (l0 := l) in H1. apply H1. Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (NoDup)  *)
