@@ -1915,7 +1915,7 @@ Proof.
     lists (with elements of type X) that have no elements in
     common. *)
 
-(* FILL IN HERE *)
+Definition disjoint ( X : Type ) ( l0 l1 : list X ) : Prop := forall x, ~ (In x l0 /\ In x l1).
 
 (** Next, use [In] to define an inductive proposition [NoDup X
     l], which should be provable exactly when [l] is a list (with
@@ -1924,12 +1924,33 @@ Proof.
     bool []] should be provable, while [NoDup nat [1;2;1]] and
     [NoDup bool [true;true]] should not be.  *)
 
-(* FILL IN HERE *)
+Inductive NoDup { X : Type } : list X -> Prop :=
+| nd__null : NoDup [ ]
+| nd__app : forall x l, NoDup l -> ~ (In x l) -> NoDup (x :: l).
 
 (** Finally, state and prove one or more interesting theorems relating
     [disjoint], [NoDup] and [++] (list append).  *)
 
-(* FILL IN HERE *)
+Lemma disjoint_x : forall ( X : Type ) ( x : X ) ( l0 l1 : list X ),
+  ~ (In x l1) -> disjoint X l0 l1 -> disjoint X (x :: l0) l1.
+Proof.
+  intros X x l0 l1 H0 H1. unfold disjoint. unfold not. intros x0 Hin.
+  destruct Hin. destruct H.
+  - rewrite <- H in H2. contradiction.
+  - unfold disjoint in H1. apply (H1 x0). split.
+    + apply H.
+    + apply H2. Qed.
+
+Theorem no_dup_app_2_disjoint : forall ( X : Type ) ( l0 l1 : list X ),
+    NoDup (l0 ++ l1) -> disjoint X l0 l1.
+Proof.
+  intros X l0. induction l0 as [ | x0 l0 IH0 ].
+  - simpl. intros l1 H. unfold disjoint. simpl. intros x.
+    unfold not. intros [ Hnot Hin ]. apply Hnot.
+  - simpl. intros l1 H. inversion H. apply disjoint_x.
+    + unfold not. intros Hin. apply H3. apply In_app_iff. right. apply Hin.
+    + apply IH0. apply H2. Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (pigeonhole_principle)  *)
