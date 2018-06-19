@@ -1962,18 +1962,23 @@ Proof.
 
 (** First prove an easy useful lemma. *)
 
-Lemma in_split : forall (X:Type) (x:X) (l:list X),
+Lemma in_split : forall ( X : Type ) ( x : X ) ( l : list X ),
   In x l ->
   exists l1 l2, l = l1 ++ x :: l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X x l. induction l as [ | h l IH ].
+  - intros H. inversion H.
+  - simpl. intros [ Heqx | Hinx ].
+    + exists []. exists l. rewrite Heqx. reflexivity.
+    + apply IH in Hinx. destruct Hinx as [ lh1 Hinx ]. destruct Hinx as [ lh2 Hinx ].
+      exists (h :: lh1). exists lh2. simpl. rewrite Hinx. reflexivity. Qed.
 
 (** Now define a property [repeats] such that [repeats X l] asserts
     that [l] contains at least one repeated element (of type [X]).  *)
 
-Inductive repeats {X:Type} : list X -> Prop :=
-  (* FILL IN HERE *)
-.
+Inductive repeats { X : Type } : list X -> Prop :=
+| rep__in : forall x l, In x l -> repeats (x :: l)
+| rep__add : forall x l, repeats l -> repeats (x :: l).
 
 (** Now, here's a way to formalize the pigeonhole principle.  Suppose
     list [l2] represents a list of pigeonhole labels, and list [l1]
@@ -1988,14 +1993,39 @@ Inductive repeats {X:Type} : list X -> Prop :=
     manage to do this, you will not need the [excluded_middle]
     hypothesis. *)
 
-Theorem pigeonhole_principle: forall (X:Type) (l1  l2:list X),
-   excluded_middle ->
-   (forall x, In x l1 -> In x l2) ->
-   length l2 < length l1 ->
-   repeats l1.
+Lemma length_in_split : forall ( X : Type ) ( x : X ) ( l0 l1 : list X ),
+    length (l0 ++ x :: l1) = S (length (l0 ++ l1)).
 Proof.
-   intros X l1. induction l1 as [|x l1' IHl1'].
-  (* FILL IN HERE *) Admitted.
+  intros X x l0 l1. induction l0 as [ | h0 l0 IH0 ].
+  - reflexivity.
+  - simpl. apply f_equal. apply IH0. Qed.
+
+Theorem pigeonhole_principle: forall ( X : Type ) ( l1 l2 : list X ),
+    excluded_middle
+    -> (forall x, In x l1 -> In x l2)
+    -> length l2 < length l1
+    -> repeats l1.
+Proof.
+  intros X l1. induction l1 as [ | x l1 IHl1 ]; unfold excluded_middle; intros l2 Hem.
+  - intros Hnon1 Hnon2. inversion Hnon2.
+  - intros Hin Hlen. assert (Hinem : In x l1 \/ ~ In x l1). apply (Hem (In x l1)).
+    destruct Hinem as [ Hinem | Hinem ].
+    + apply rep__in. apply Hinem.
+    + apply rep__add. assert (Hinem2 : In x l2 \/ ~ In x l2). apply (Hem (In x l2)).
+      destruct Hinem2 as [ Hinem2 | Hinem2 ].
+      * apply in_split in Hinem2.
+        destruct Hinem2 as [ l3 Hinem2 ]. destruct Hinem2 as [ l4 Hinem2 ]. apply IHl1 with (l2 := l3 ++ l4).
+        { unfold excluded_middle. intros. apply Hem. }
+        { intros. destruct (Hem (x = x0)).
+          - rewrite H0 in Hinem. contradiction.
+          - assert (Hin2 : In x0 l2). apply Hin. right. apply H.
+            rewrite Hinem2 in Hin2. apply In_app_iff in Hin2. destruct Hin2 as [ Hin2 | [ Hin2 | Hin2 ] ].
+            + apply In_app_iff. left. apply Hin2.
+            + contradiction.
+            + apply In_app_iff. right. apply Hin2. }
+        { rewrite Hinem2 in Hlen. rewrite length_in_split with (l0 := l3) in Hlen. simpl in Hlen.
+          apply Sn_le_Sm__n_le_m in Hlen. apply Sn_le_Sm__n_le_m. apply le_n_S. apply Hlen. }
+      * assert (Hanyapp : In x (x :: l1)). left. reflexivity.
+        apply Hin in Hanyapp. contradiction. Qed.
+
 (** [] *)
-
-
