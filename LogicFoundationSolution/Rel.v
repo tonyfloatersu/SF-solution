@@ -107,7 +107,7 @@ Print total_relation.
 Theorem total_relation_not_partial : ~ (partial_function total_relation).
 Proof.
   unfold not. unfold partial_function. intros Htt.
-  assert (Hyaju : 114 = 514). {
+  assert (Hyaju : 893 = 810). {
     apply Htt with (x := 1919).
     - apply tr.
     - apply tr. }
@@ -148,7 +148,7 @@ Proof.
 (** A relation [R] is _transitive_ if [R a c] holds whenever [R a b]
     and [R b c] do. *)
 
-Definition transitive {X: Type} (R: relation X) :=
+Definition transitive { X : Type } ( R : relation X ) :=
   forall a b c : X, (R a b) -> (R b c) -> (R a c).
 
 Theorem le_trans :
@@ -179,8 +179,10 @@ Proof.
   (* Prove this by induction on evidence that [m] is less than [o]. *)
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
-  induction Hmo as [| m' Hm'o].
-    (* FILL IN HERE *) Admitted.
+  induction Hmo as [ | m' Hm'omega ].
+  - apply le_S. apply Hnm.
+  - apply le_S. apply IHHm'omega. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (lt_trans'')  *)
@@ -191,8 +193,12 @@ Theorem lt_trans'' :
 Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
-  induction o as [| o'].
-  (* FILL IN HERE *) Admitted.
+  induction o as [ | o' ].
+  - inversion Hmo.
+  - apply le_S in Hnm. apply le_trans with (a := (S n)) (b := (S m)) (c := (S o')).
+    + apply Hnm.
+    + apply Hmo. Qed.
+
 (** [] *)
 
 (** The transitivity of [le], in turn, can be used to prove some facts
@@ -210,7 +216,10 @@ Qed.
 Theorem le_S_n : forall n m,
   (S n <= S m) -> (n <= m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m H. inversion H.
+  - apply le_reflexive.
+  - apply le_Sn_le. apply H1. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (le_Sn_n_inf)  *)
