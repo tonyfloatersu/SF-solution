@@ -351,13 +351,13 @@ Proof.
     transitive.  Formally, it is defined like this in the Relations
     module of the Coq standard library: *)
 
-Inductive clos_refl_trans {A: Type} (R: relation A) : relation A :=
+Inductive clos_refl_trans { A : Type } ( R : relation A ) : relation A :=
     | rt_step : forall x y, R x y -> clos_refl_trans R x y
     | rt_refl : forall x, clos_refl_trans R x x
     | rt_trans : forall x y z,
-          clos_refl_trans R x y ->
-          clos_refl_trans R y z ->
-          clos_refl_trans R x z.
+        clos_refl_trans R x y
+        -> clos_refl_trans R y z
+        -> clos_refl_trans R x z.
 
 (** For example, the reflexive and transitive closure of the
     [next_nat] relation coincides with the [le] relation. *)
@@ -389,8 +389,8 @@ Proof.
     since the "nondeterminism" of the [rt_trans] rule can sometimes
     lead to tricky inductions.  Here is a more useful definition: *)
 
-Inductive clos_refl_trans_1n {A : Type}
-                             (R : relation A) (x : A)
+Inductive clos_refl_trans_1n { A : Type }
+                             ( R : relation A ) ( x : A )
                              : A -> Prop :=
   | rt1n_refl : clos_refl_trans_1n R x x
   | rt1n_trans (y z : A) :
@@ -409,7 +409,7 @@ Inductive clos_refl_trans_1n {A : Type}
     the behavior of the two "missing" [clos_refl_trans]
     constructors.  *)
 
-Lemma rsc_R : forall (X:Type) (R:relation X) (x y : X),
+Lemma rsc_R : forall ( X : Type ) ( R : relation X ) ( x y : X ),
        R x y -> clos_refl_trans_1n R x y.
 Proof.
   intros X R x y H.
@@ -417,12 +417,17 @@ Proof.
 
 (** **** Exercise: 2 stars, optional (rsc_trans)  *)
 Lemma rsc_trans :
-  forall (X:Type) (R: relation X) (x y z : X),
-      clos_refl_trans_1n R x y  ->
-      clos_refl_trans_1n R y z ->
-      clos_refl_trans_1n R x z.
+  forall ( X : Type ) ( R : relation X ) ( x y z : X ),
+    clos_refl_trans_1n R x y
+    -> clos_refl_trans_1n R y z
+    -> clos_refl_trans_1n R x z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X R x y z. intros Hclxy Hclyz. induction Hclxy.
+  - apply Hclyz.
+  - apply IHHclxy in Hclyz. apply rt1n_trans with (y).
+    + apply H.
+    + apply Hclyz. Qed.
+
 (** [] *)
 
 (** Then we use these facts to prove that the two definitions of
@@ -431,9 +436,21 @@ Proof.
 
 (** **** Exercise: 3 stars, optional (rtc_rsc_coincide)  *)
 Theorem rtc_rsc_coincide :
-         forall (X:Type) (R: relation X) (x y : X),
-  clos_refl_trans R x y <-> clos_refl_trans_1n R x y.
+  forall ( X : Type ) ( R : relation X ) ( x y : X ),
+    clos_refl_trans R x y <-> clos_refl_trans_1n R x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X R x y. split.
+  - intros Hclxy. induction Hclxy.
+    + apply rsc_R. apply H.
+    + apply rt1n_refl.
+    + apply rsc_trans with y.
+      * apply IHHclxy1.
+      * apply IHHclxy2.
+  - intros Hclxy. induction Hclxy.
+    + apply rt_refl.
+    + apply rt_trans with y.
+      * apply rt_step. apply H.
+      * apply IHHclxy. Qed.
+
 (** [] *)
 
