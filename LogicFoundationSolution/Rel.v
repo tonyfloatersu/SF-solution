@@ -300,7 +300,13 @@ Theorem le_step : forall n m p,
   m <= S p ->
   n <= p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m p. intros Hnmle Hmsp.
+  induction Hnmle.
+  - apply le_S_n in Hmsp. apply Hmsp.
+  - apply IHHnmle. apply le_trans with (a := m) (b := (S m)).
+    + apply le_S. apply le_reflexive.
+    + apply Hmsp. Qed.
+
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -309,7 +315,7 @@ Proof.
 (** A relation is an _equivalence_ if it's reflexive, symmetric, and
     transitive.  *)
 
-Definition equivalence {X:Type} (R: relation X) :=
+Definition equivalence { X : Type } ( R : relation X ) :=
   (reflexive R) /\ (symmetric R) /\ (transitive R).
 
 (* ----------------------------------------------------------------- *)
@@ -319,13 +325,13 @@ Definition equivalence {X:Type} (R: relation X) :=
     _anti_-symmetric, and transitive.  In the Coq standard library
     it's called just "order" for short. *)
 
-Definition order {X:Type} (R: relation X) :=
+Definition order { X : Type } ( R : relation X ) :=
   (reflexive R) /\ (antisymmetric R) /\ (transitive R).
 
 (** A preorder is almost like a partial order, but doesn't have to be
     antisymmetric. *)
 
-Definition preorder {X:Type} (R: relation X) :=
+Definition preorder { X : Type } ( R : relation X ) :=
   (reflexive R) /\ (transitive R).
 
 Theorem le_order :
