@@ -239,7 +239,12 @@ Proof.
 Theorem le_Sn_n : forall n,
   ~ (S n <= n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [ | n IH ]; intros Hcontra.
+  - inversion Hcontra.
+  - unfold not in IH. apply IH. apply le_trans with (S n).
+    + apply le_reflexive.
+    + apply le_S_n. apply Hcontra. Qed.
+
 (** [] *)
 
 (** Reflexivity and transitivity are the main concepts we'll need for
@@ -258,21 +263,35 @@ Definition symmetric {X: Type} (R: relation X) :=
 Theorem le_not_symmetric :
   ~ (symmetric le).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold symmetric. intros Hnot.
+  assert (1 <= 0) as Hyaju. apply Hnot. apply le_S. apply le_reflexive.
+  inversion Hyaju. Qed.
+
 (** [] *)
 
 (** A relation [R] is _antisymmetric_ if [R a b] and [R b a] together
     imply [a = b] -- that is, if the only "cycles" in [R] are trivial
     ones. *)
 
-Definition antisymmetric {X: Type} (R: relation X) :=
+Definition antisymmetric { X : Type } ( R : relation X ) :=
   forall a b : X, (R a b) -> (R b a) -> a = b.
 
 (** **** Exercise: 2 stars, optional (le_antisymmetric)  *)
 Theorem le_antisymmetric :
   antisymmetric le.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold antisymmetric.
+  intros a b Hab Hba.
+  induction Hab.
+  - reflexivity.
+  - assert (S m <= m) as Hnon. {
+      apply le_trans with (a := (S m)) (b := m).
+      + apply le_trans with (a := (S m)) (b := a).
+        * apply Hba.
+        * apply Hab.
+      + apply le_reflexive. }
+    apply le_Sn_n in Hnon. contradiction. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (le_step)  *)
