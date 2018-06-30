@@ -175,10 +175,10 @@ Print ev_4'''.
 
 Theorem ev_8 : ev 8.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply (ev_SS 6 (ev_SS 4 (ev_SS 2 (ev_SS 0 ev_0)))). Qed.
 
-Definition ev_8' : ev 8 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ev_8' : ev 8 := (ev_SS 6 (ev_SS 4 (ev_SS 2 (ev_SS 0 ev_0)))).
+
 (** [] *)
 
 (* ################################################################# *)
@@ -378,11 +378,12 @@ Definition and_comm' P Q : P /\ Q <-> Q /\ P :=
 (** **** Exercise: 2 stars, optional (conj_fact)  *)
 (** Construct a proof object demonstrating the following proposition. *)
 
-Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R :=
+  fun (P Q R : Prop) (HPQ : P /\ Q) (HQR : Q /\ R) =>
+    conj (match HPQ with conj P Q => P end)
+         (match HQR with conj Q R => R end).
+
 (** [] *)
-
-
 
 (** ** Disjunction
 
@@ -408,8 +409,13 @@ End Or.
 (** Try to write down an explicit proof object for [or_commut] (without
     using [Print] to peek at the ones we already defined!). *)
 
-Definition or_comm : forall P Q, P \/ Q -> Q \/ P 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition or_comm : forall P Q, P \/ Q -> Q \/ P :=
+  fun (P Q : Prop) (HPQ : P \/ Q) =>
+    match HPQ with
+    | or_introl P => or_intror P
+    | or_intror Q => or_introl Q
+    end.
+
 (** [] *)
 
 (** ** Existential Quantification
