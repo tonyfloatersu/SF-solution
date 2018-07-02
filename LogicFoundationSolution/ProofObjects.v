@@ -426,7 +426,7 @@ Definition or_comm : forall P Q, P \/ Q -> Q \/ P :=
 
 Module Ex.
 
-Inductive ex {A : Type} (P : A -> Prop) : Prop :=
+Inductive ex { A : Type } ( P : A -> Prop ) : Prop :=
 | ex_intro : forall x : A, P x -> ex P.
 
 End Ex.
@@ -453,8 +453,9 @@ Definition some_nat_is_even : exists n, ev n :=
 (** **** Exercise: 2 stars, optional (ex_ev_Sn)  *)
 (** Complete the definition of the following proof object: *)
 
-Definition ex_ev_Sn : ex (fun n => ev (S n)) 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ex_ev_Sn : ex (fun n => ev (S n)) :=
+  ex_intro (fun n => ev (S n)) 1 (ev_SS 0 ev_0).
+
 (** [] *)
 
 (* ================================================================= *)
@@ -488,7 +489,7 @@ End Props.
 
 Module MyEquality.
 
-Inductive eq {X:Type} : X -> X -> Prop :=
+Inductive eq { X : Type } : X -> X -> Prop :=
 | eq_refl : forall x, eq x x.
 
 Notation "x = y" := (eq x y)
@@ -531,8 +532,8 @@ Qed.
 Definition four' : 2 + 2 = 1 + 3 :=
   eq_refl 4.
 
-Definition singleton : forall (X:Type) (x:X), []++[x] = x::[]  :=
-  fun (X:Type) (x:X) => eq_refl [x].
+Definition singleton : forall ( X : Type ) ( x : X ), [ ] ++ [x] = x :: [ ] :=
+  fun ( X : Type ) ( x : X ) => eq_refl [x].
 
 End MyEquality.
 
@@ -542,20 +543,22 @@ End MyEquality.
     what we mean when we say "[x] and [y] are equal" is that every
     property on [P] that is true of [x] is also true of [y].  *)
 
-Lemma equality__leibniz_equality : forall (X : Type) (x y: X),
-  x = y -> forall P:X->Prop, P x -> P y.
+Lemma equality__leibniz_equality : forall ( X : Type ) ( x y: X ),
+    x = y -> forall P : X -> Prop, P x -> P y.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X x y Hxy P Hpx. rewrite <- Hxy. apply Hpx. Qed.
+
 (** [] *)
 
 (** **** Exercise: 5 stars, optional (leibniz_equality__equality)  *)
 (** Show that, in fact, the inductive definition of equality is
     _equivalent_ to Leibniz equality: *)
 
-Lemma leibniz_equality__equality : forall (X : Type) (x y: X),
-  (forall P:X->Prop, P x -> P y) -> x = y.
+Lemma leibniz_equality__equality : forall ( X : Type ) ( x y: X ),
+    (forall P : X -> Prop, P x -> P y) -> x = y.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X x y Hp. apply Hp. reflexivity. Qed.
+
 (** [] *)
 
 (* ================================================================= *)
