@@ -110,6 +110,12 @@ Inductive rgb : Type :=
   | green : rgb
   | blue : rgb.
 Check rgb_ind.
+(* ===> rgn_ind : forall P : rgb -> Prop,
+                    P red ->
+                    P green ->
+                    P blue ->
+                    forall r : rgb, P r. *)
+
 (** [] *)
 
 (** Here's another example, this time with one of the constructors
@@ -137,6 +143,7 @@ Inductive natlist1 : Type :=
   | nsnoc1 : natlist1 -> nat -> natlist1.
 
 (** Now what will the induction principle look like? *)
+Check natlist1_ind.
 (** [] *)
 
 (** From these examples, we can extract this general rule:
@@ -163,6 +170,9 @@ Inductive byntree : Type :=
  | bempty : byntree
  | bleaf  : yesno -> byntree
  | nbranch : yesno -> byntree -> byntree -> byntree.
+
+Check byntree_ind.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (ex_set)  *)
@@ -178,8 +188,11 @@ Inductive byntree : Type :=
     Give an [Inductive] definition of [ExSet]: *)
 
 Inductive ExSet : Type :=
-  (* FILL IN HERE *)
-.
+| con1 : bool -> ExSet
+| con2 : nat -> ExSet -> ExSet.
+
+Check ExSet_ind.
+
 (** [] *)
 
 (* ################################################################# *)
