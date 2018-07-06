@@ -247,6 +247,13 @@ Check tree_ind.
                forall n : nat, P (constr3 X m n)) ->
             forall m : mytype X, P m
 *) 
+Inductive mytype ( X : Type ) : Type :=
+| constr1 : X -> mytype X
+| constr2 : nat -> mytype X
+| constr3 : mytype X -> nat -> mytype X.
+
+Check mytype_ind.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo)  *)
@@ -260,7 +267,15 @@ Check tree_ind.
              (forall f1 : nat -> foo X Y,
                (forall n : nat, P (f1 n)) -> P (quux X Y f1)) ->
              forall f2 : foo X Y, P f2
-*) 
+ *)
+
+Inductive foo ( X Y : Type ) : Type :=
+| bar : X -> foo X Y
+| baz : Y -> foo X Y
+| quux : (nat -> foo X Y) -> foo X Y.
+
+Check foo_ind.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo')  *)
@@ -421,7 +436,23 @@ Proof.
     induction, and state the theorem and proof in terms of this
     defined proposition.  *)
 
-(* FILL IN HERE *)
+Definition P_pas ( n m p : nat ) : Prop := n + (m + p) = (n + m) + p.
+
+Theorem plus_assoc_redef : forall n m p : nat,
+    P_pas n m p.
+Proof.
+  intros n m. apply nat_ind.
+  - unfold P_pas. rewrite <- 2 plus_n_O. reflexivity.
+  - unfold P_pas. intros n0 H. rewrite <- 3 plus_n_Sm. rewrite <- H. reflexivity. Qed.
+
+Definition P_pac ( n m : nat ) : Prop := n + m = m + n.
+
+Theorem plus_comm_redef : forall n m : nat, P_pac n m.
+Proof.
+  intros n. apply nat_ind.
+  - unfold P_pac. rewrite plus_O_n. rewrite <- plus_n_O. reflexivity.
+  - intros n0. unfold P_pac. intros H. rewrite <- plus_n_Sm. rewrite plus_Sn_m. rewrite H. reflexivity. Qed.
+
 (** [] *)
 
 (* ################################################################# *)
