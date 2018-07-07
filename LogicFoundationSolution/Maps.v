@@ -215,7 +215,7 @@ Proof. reflexivity. Qed.
 
 Lemma t_apply_empty:  forall (A:Type) (x: string) (v: A), { --> v } x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (t_update_eq)  *)
@@ -226,7 +226,8 @@ Proof.
 Lemma t_update_eq : forall A (m: total_map A) x v,
   (m & {x --> v}) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x v. unfold t_update. rewrite <- beq_string_refl. reflexivity. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (t_update_neq)  *)
@@ -239,7 +240,9 @@ Theorem t_update_neq : forall (X:Type) v x1 x2
   x1 <> x2 ->
   (m & {x1 --> v}) x2 = m x2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X v x1 x2 m H0. unfold t_update. apply beq_string_false_iff in H0.
+  rewrite H0. reflexivity. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (t_update_shadow)  *)
@@ -252,7 +255,11 @@ Proof.
 Lemma t_update_shadow : forall A (m: total_map A) v1 v2 x,
     m & {x --> v1 ; x --> v2} = m & {x --> v2}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m v1 v2 x. unfold t_update. apply functional_extensionality.
+  intros x0. destruct (beq_string x x0) eqn : Hbeq.
+  - reflexivity.
+  - reflexivity. Qed.
+
 (** [] *)
 
 (** For the final two lemmas about total maps, it's convenient to use
@@ -266,7 +273,10 @@ Proof.
 
 Lemma beq_stringP : forall x y, reflect (x = y) (beq_string x y).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x y. destruct (beq_string x y) eqn : Hbeq.
+  - apply beq_string_true_iff in Hbeq. apply ReflectT. apply Hbeq.
+  - apply beq_string_false_iff in Hbeq. apply ReflectF. apply Hbeq. Qed.
+
 (** [] *)
 
 (** Now, given [string]s [x1] and [x2], we can use the [destruct (beq_stringP
@@ -282,8 +292,12 @@ Proof.
 
 Theorem t_update_same : forall X x (m : total_map X),
     m & { x --> m x } = m.
-  Proof.
-  (* FILL IN HERE *) Admitted.
+Proof.
+  intros X x m. unfold t_update. apply functional_extensionality.
+  intros x0. destruct (beq_string x x0) eqn : Hbeq.
+  - apply beq_string_true_iff in Hbeq. rewrite Hbeq. reflexivity.
+  - reflexivity. Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, recommended (t_update_permute)  *)
@@ -297,7 +311,14 @@ Theorem t_update_permute : forall (X:Type) v1 v2 x1 x2
   m & { x2 --> v2 ; x1 --> v1 }
   =  m & { x1 --> v1 ; x2 --> v2 }.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X v1 v2 x1 x2 m H0. unfold t_update. apply functional_extensionality.
+  intros x. destruct (beq_string x1 x) eqn : Hbeq1.
+  - destruct (beq_string x2 x) eqn : Hbeq2.
+    + apply beq_string_true_iff in Hbeq1. apply beq_string_true_iff in Hbeq2.
+      rewrite <- Hbeq1 in Hbeq2. contradiction.
+    + reflexivity.
+  - reflexivity. Qed.
+
 (** [] *)
 
 (* ################################################################# *)
