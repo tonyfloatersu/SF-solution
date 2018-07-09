@@ -394,7 +394,7 @@ Proof.
 Qed.
 
 Theorem update_permute : forall (X:Type) v1 v2 x1 x2
-                                (m : partial_map X),
+                           (m : partial_map X),
   x2 <> x1 ->
   m & {{x2 --> v2 ; x1 --> v1}}
   = m & {{x1 --> v1 ; x2 --> v2}}.
