@@ -473,7 +473,31 @@ Proof.
     more interesting incrementially.)
 
 (* FILL IN HERE *)
-*)
+ *)
+
+Fixpoint optimize_0_aexp ( a : aexp ) : aexp :=
+  match a with
+  | ANum n             => ANum n
+  | APlus (ANum 0) e2  => optimize_0_aexp e2
+  | APlus e1 e2        => APlus (optimize_0_aexp e1) (optimize_0_aexp e2)
+  | AMinus e1 e2       => AMinus (optimize_0_aexp e1) (optimize_0_aexp e2)
+  | AMult (ANum 0) e2  => ANum 0
+  | AMult e1 e2        => AMult (optimize_0_aexp e1) (optimize_0_aexp e2)
+  end.
+
+Compute aeval (optimize_0_aexp (ANum 6)).
+Compute aeval (optimize_0_aexp (AMult (ANum 5) (ANum 0))).
+
+Theorem optimize_0_aexp_sound: forall a, aeval (optimize_0_aexp a) = aeval a.
+Proof.
+  intros a. induction a;
+              try reflexivity;
+              try (simpl; simpl in IHa1; rewrite IHa1; rewrite IHa2; reflexivity).
+  - destruct a1; try (simpl in IHa1; simpl; rewrite IHa1; rewrite IHa2; reflexivity).
+    + destruct n; simpl; rewrite IHa2; reflexivity.
+  - destruct a1; try (simpl in IHa1; simpl; rewrite IHa1; rewrite IHa2; reflexivity).
+    destruct n; try reflexivity; try (simpl; simpl in IHa2; rewrite IHa2; reflexivity). Qed.
+
 (** [] *)
 
 (* ================================================================= *)
