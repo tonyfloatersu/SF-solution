@@ -788,13 +788,37 @@ Qed.
     [aevalR], and prove that it is equivalent to [beval].*)
 
 Inductive bevalR: bexp -> bool -> Prop :=
-(* FILL IN HERE *)
-.
+  | E_BTrue : BTrue \\ true
+  | E_BFalse : BFalse \\ false
+  | E_BEq : forall ( a0 a1 : aexp ) ( an0 an1 : nat ),
+      aevalR a0 an0 -> aevalR a1 an1 -> BEq a0 a1 \\ beq_nat an0 an1
+  | E_BLe : forall ( a0 a1 : aexp ) ( an0 an1 : nat ),
+      aevalR a0 an0 -> aevalR a1 an1 -> BLe a0 a1 \\ leb an0 an1
+  | E_BNot : forall ( b0 : bexp ) ( bo0 : bool ), b0 \\ bo0 -> BNot b0 \\ negb bo0
+  | E_BAnd : forall ( b0 b1 : bexp ) ( bo0 bo1 : bool ),
+      b0 \\ bo0 -> b1 \\ bo1 -> BAnd b0 b1 \\ andb bo0 bo1
+  where "e '\\' n" := ( bevalR e n ) : type_scope.
 
 Lemma beval_iff_bevalR : forall b bv,
   bevalR b bv <-> beval b = bv.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - generalize dependent bv. induction b; intros;
+                               try (inversion H; reflexivity);
+                               try (simpl; inversion H;
+                                    apply aeval_iff_aevalR in H2;
+                                    apply aeval_iff_aevalR in H4; subst; reflexivity);
+                               simpl; inversion H.
+    + apply IHb in H1. subst. reflexivity.
+    + apply IHb1 in H2. apply IHb2 in H4. subst. reflexivity.
+  - generalize bv. induction b; intros; try (simpl in H; subst).
+    + apply E_BTrue.
+    + apply E_BFalse.
+    + apply (E_BEq a a0); apply aeval_iff_aevalR; reflexivity.
+    + apply (E_BLe a a0); apply aeval_iff_aevalR; reflexivity.
+    + apply (E_BNot b). apply IHb. reflexivity.
+    + apply (E_BAnd b1 b2); try (apply IHb1; reflexivity); try (apply IHb2; reflexivity). Qed.
+
 (** [] *)
 
 End AExp.
