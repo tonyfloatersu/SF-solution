@@ -1232,6 +1232,8 @@ Fixpoint ceval_fun_no_while (st : state) (c : com)
         st  (* bogus *)
   end.
 
+(* --> 07/24/2018 *)
+
 (** In a traditional functional programming language like OCaml or
     Haskell we could add the [WHILE] case as follows:
 
