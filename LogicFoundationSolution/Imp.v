@@ -1232,8 +1232,6 @@ Fixpoint ceval_fun_no_while (st : state) (c : com)
         st  (* bogus *)
   end.
 
-(* --> 07/24/2018 *)
-
 (** In a traditional functional programming language like OCaml or
     Haskell we could add the [WHILE] case as follows:
 
@@ -1388,7 +1386,10 @@ Example ceval_example2:
   (X ::= 0;; Y ::= 1;; Z ::= 2) / { --> 0 } \\
   { X --> 0 ; Y --> 1 ; Z --> 2 }.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply E_Seq with { X --> 0 }.
+  - apply E_Ass. reflexivity.
+  - apply E_Seq with ( { X --> 0 } & { Y --> 1 } ); try ( apply E_Ass; reflexivity ). Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (pup_to_n)  *)
@@ -1397,14 +1398,27 @@ Proof.
    Prove that this program executes as intended for [X] = [2]
    (this is trickier than you might expect). *)
 
-Definition pup_to_n : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition pup_to_n : com :=
+  Y ::= 0 ;;
+  WHILE ! (X = 0) DO
+    Y ::= X + Y ;;
+    X ::= X - 1
+  END.
 
 Theorem pup_to_2_ceval :
   pup_to_n / { X --> 2 }
      \\ { X --> 2 ; Y --> 0 ; Y --> 2 ; X --> 1 ; Y --> 3 ; X --> 0 }.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold pup_to_n. apply E_Seq with ( { X --> 2 } & { Y --> 0 } ).
+  - apply E_Ass. reflexivity.
+  - apply E_WhileTrue with { X --> 2 ; Y --> 0 ; Y --> 2 ; X --> 1 }.
+    + reflexivity.
+    + apply E_Seq with { X --> 2 ; Y --> 0 ; Y --> 2 }; try ( apply E_Ass; reflexivity ).
+    + apply E_WhileTrue with { X --> 2 ; Y --> 0 ; Y --> 2 ; X --> 1 ; Y --> 3 ; X --> 0 }.
+      * reflexivity.
+      * apply E_Seq with { X --> 2 ; Y --> 0 ; Y --> 2 ; X --> 1 ; Y --> 3 }; try ( apply E_Ass; reflexivity ).
+      * apply E_WhileFalse. reflexivity. Qed.
+
 (** [] *)
 
 (* ================================================================= *)
