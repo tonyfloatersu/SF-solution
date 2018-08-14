@@ -1755,7 +1755,23 @@ Proof.
     evaluation of [BAnd] in this manner, and prove that it is
     equivalent to [beval]. *)
 
-(* FILL IN HERE *)
+Fixpoint beval_short (st : state) (b : bexp) : bool :=
+  match b with
+  | BTrue       => true
+  | BFalse      => false
+  | BEq a1 a2   => beq_nat (aeval st a1) (aeval st a2)
+  | BLe a1 a2   => leb (aeval st a1) (aeval st a2)
+  | BNot b1     => negb (beval_short st b1)
+  | BAnd b1 b2  => match (beval_short st b1) with
+                  | true => beval_short st b2
+                  | false => false
+                  end
+  end.
+
+Theorem beval_eq : forall st b, beval st b = beval_short st b.
+Proof.
+  intros st b. induction b; simpl; try reflexivity. Qed.
+
 (** [] *)
 
 Module BreakImp.
@@ -1870,10 +1886,29 @@ Reserved Notation "c1 '/' st '\\' s '/' st'"
     [ceval] relation. *)
 
 Inductive ceval : com -> state -> result -> state -> Prop :=
-  | E_Skip : forall st,
-      CSkip / st \\ SContinue / st
-  (* FILL IN HERE *)
-
+  | E_Skip : forall st, CSkip / st \\ SContinue / st
+  | E_Break : forall st, BREAK / st \\ SBreak / st
+  | E_Ass : forall st x a, (x ::= a) / st \\ SContinue / (st & { x --> aeval st a })
+  | E_Seq_Break : forall st c0 c1 st', c0 / st \\ SBreak / st' ->
+                                  (c0 ;; c1) / st \\ SBreak / st'
+  | E_Seq_Continue : forall st st' st'' c0 c1 res, c0 / st \\ SContinue / st' ->
+                                              c1 / st' \\ res / st'' ->
+                                              (c0 ;; c1) / st \\ res / st''
+  | E_If_True : forall b st st' c0 c1 res, beval st b = true ->
+                                      c0 / st \\ res / st' ->
+                                      (IFB b THEN c0 ELSE c1 FI) / st \\ res / st'
+  | E_If_False : forall b st st' c0 c1 res, beval st b = false ->
+                                       c1 / st \\ res / st' ->
+                                       (IFB b THEN c0 ELSE c1 FI) / st \\ res / st'
+  | E_While_True_Break : forall b st st' c, beval st b = true ->
+                                       c / st \\ SBreak / st' ->
+                                       (WHILE b DO c END) / st \\ SContinue / st'
+  | E_While_False : forall b st c, beval st b = false ->
+                              (WHILE b DO c END) / st \\ SContinue / st
+  | E_While_True_Continue : forall b st st' st'' c, beval st b = true ->
+                                               c / st \\ SContinue / st' ->
+                                               (WHILE b DO c END) / st' \\ SContinue / st'' ->
+                                               (WHILE b DO c END) / st \\ SContinue / st''
   where "c1 '/' st '\\' s '/' st'" := (ceval c1 st s st').
 
 (** Now prove the following properties of your definition of [ceval]: *)
@@ -1882,20 +1917,23 @@ Theorem break_ignore : forall c st st' s,
      (BREAK;; c) / st \\ s / st' ->
      st = st'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H.
+  - inversion H5. reflexivity.
+  - inversion H2. Qed.
 
 Theorem while_continue : forall b c st st' s,
   (WHILE b DO c END) / st \\ s / st' ->
   s = SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H; try reflexivity. Qed.
 
 Theorem while_stops_on_break : forall b c st st',
   beval st b = true ->
   c / st \\ SBreak / st' ->
   (WHILE b DO c END) / st \\ SContinue / st'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. apply E_While_True_Break; try apply H0; try apply H. Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (while_break_true)  *)
@@ -1904,7 +1942,12 @@ Theorem while_break_true : forall b c st st',
   beval st' b = true ->
   exists st'', c / st'' \\ SBreak / st'.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. remember (WHILE b DO c END) as loop eqn : Hloop.
+  induction H; try (inversion Hloop).
+  - subst. exists st; assumption.
+  - rewrite H2 in H. rewrite H0 in H. inversion H.
+  - apply IHceval2; assumption. Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ceval_deterministic)  *)
