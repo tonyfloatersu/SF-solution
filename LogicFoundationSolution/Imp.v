@@ -1956,7 +1956,32 @@ Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
      c / st \\ s2 / st2 ->
      st1 = st2 /\ s1 = s2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. generalize dependent st2. generalize dependent s2.
+  induction H; intros; try (inversion H0; split; reflexivity).
+  - inversion H0; subst.
+    + apply IHceval. apply H6.
+    + apply IHceval in H3. inversion H3. inversion H2.
+  - inversion H1; subst.
+    + apply IHceval1 in H7. inversion H7. inversion H3.
+    + apply IHceval1 in H4. inversion H4. subst. apply IHceval2 in H8. apply H8.
+  - inversion H1; subst.
+    + apply IHceval in H9. apply H9.
+    + rewrite H8 in H. inversion H.
+  - inversion H1; subst.
+    + rewrite H8 in H. inversion H.
+    + apply IHceval in H9. apply H9.
+  - inversion H1; subst.
+    + apply IHceval in H8. inversion H8. split; try reflexivity; try assumption.
+    + rewrite H7 in H. inversion H.
+    + apply IHceval in H5. inversion H5. inversion H3.
+  - inversion H0; subst.
+    + rewrite H3 in H. inversion H.
+    + split; reflexivity.
+    + rewrite H3 in H. inversion H.
+  - inversion H2; subst.
+    + apply IHceval1 in H9. inversion H9. inversion H4.
+    + rewrite H8 in H. inversion H.
+    + apply IHceval1 in H6. apply IHceval2. inversion H6. subst. apply H10. Qed.
 
 (** [] *)
 End BreakImp.
