@@ -2000,5 +2000,182 @@ End BreakImp.
     about making up a concrete Notation for [for] loops, but feel free
     to play with this too if you like.) *)
 
+
+Module ForImp.
+
+Inductive com : Type :=
+  | CSkip : com
+  | CBreak : com               
+  | CAss : string -> aexp -> com
+  | CSeq : com -> com -> com
+  | CIf : bexp -> com -> com -> com
+  | CWhile : bexp -> com -> com
+  | CFor : com -> bexp -> com -> com -> com. (* <-- new *)
+
+Notation "'SKIP'" :=
+  CSkip.
+Notation "'BREAK'" :=
+  CBreak.
+Notation "x '::=' a" :=
+  (CAss x a) (at level 60).
+Notation "c1 ;; c2" :=
+  (CSeq c1 c2) (at level 80, right associativity).
+Notation "'WHILE' b 'DO' c 'END'" :=
+  (CWhile b c) (at level 80, right associativity).
+Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
+  (CIf c1 c2 c3) (at level 80, right associativity).
+Notation "'FOR' a ; b ; c 'DO' d 'END'" :=
+  (CFor a b c d) (at level 80, right associativity).
+
+Inductive result : Type :=
+  | SContinue : result
+  | SBreak : result.
+
+Reserved Notation "c1 '/' st '\\' s '/' st'"
+                  (at level 40, st, s at level 39).
+
+Inductive ceval : com -> state -> result -> state -> Prop :=
+  | E_Skip : forall st, CSkip / st \\ SContinue / st
+  | E_Break : forall st, BREAK / st \\ SBreak / st
+  | E_Ass : forall st x a, (x ::= a) / st \\ SContinue / (st & { x --> aeval st a })
+  | E_If_True : forall b st st' c0 c1 res, beval st b = true ->
+                                      c0 / st \\ res / st' ->
+                                      (IFB b THEN c0 ELSE c1 FI) / st \\ res / st'
+  | E_If_False : forall b st st' c0 c1 res, beval st b = false ->
+                                       c1 / st \\ res / st' ->
+                                       (IFB b THEN c0 ELSE c1 FI) / st \\ res / st'
+  | E_Seq_Break : forall st c0 c1 st', c0 / st \\ SBreak / st' ->
+                                  (c0 ;; c1) / st \\ SBreak / st'
+  | E_Seq_Continue : forall st st' st'' c0 c1 res, c0 / st \\ SContinue / st' ->
+                                              c1 / st' \\ res / st'' ->
+                                              (c0 ;; c1) / st \\ res / st''
+  | E_While_False : forall b st c, beval st b = false ->
+                              (WHILE b DO c END) / st \\ SContinue / st
+  | E_While_True_Break : forall b st st' c, beval st b = true ->
+                                       c / st \\ SBreak / st' ->
+                                       (WHILE b DO c END) / st \\ SContinue / st'
+  | E_While_True_Continue : forall b st st' st'' c, beval st b = true ->
+                                               c / st \\ SContinue / st' ->
+                                               (WHILE b DO c END) / st' \\ SContinue / st'' ->
+                                               (WHILE b DO c END) / st \\ SContinue / st''
+  | E_ForFalse : forall b c d st, beval st b = false ->
+                             (FOR CSkip ; b ; c DO d END) / st \\ SContinue / st
+  | E_ForInit : forall a b c d st st' st'', a / st \\ SContinue / st' ->
+                                       (FOR CSkip ; b ; c DO d END) / st' \\ SContinue / st'' ->
+                                       (FOR a ; b ; c DO d END) / st \\ SContinue / st''
+  | E_ForTrueBreak : forall b c d st st', beval st b = true ->
+                                     d / st \\ SBreak / st' ->
+                                     (FOR CSkip ; b ; c DO d END) / st \\ SContinue / st'
+  | E_ForTrueContinue : forall b c d st st' st'' st''', beval st b = true ->
+                                                   d / st \\ SContinue / st' ->
+                                                   c / st' \\ SContinue / st'' ->
+                                                   (FOR CSkip ; b ; c DO d END) / st'' \\ SContinue / st''' ->
+                                                   (FOR CSkip ; b ; c DO d END) / st \\ SContinue / st'''
+  where "c1 '/' st '\\' s '/' st'" := (ceval c1 st s st').
+
+Theorem for_continue : forall a b c d st st' s,
+  (FOR a ; b ; c DO d END) / st \\ s / st' ->
+  s = SContinue.
+Proof.
+  intros.
+  inversion H; reflexivity.
+Qed.
+
+Theorem for_stops_on_break : forall a b c d st st' st'',
+  a / st \\ SContinue / st' ->
+  beval st' b = true ->
+  d / st' \\ SBreak / st'' ->
+  (FOR a ; b ; c DO d END) / st \\ SContinue / st''.
+Proof.
+  intros.
+  destruct a; try (apply E_ForInit with (st' := st'));
+    try (apply H); try (apply E_ForTrueBreak); try apply H0; try apply H1. Qed.
+
+Lemma for_deterministic : forall b c d st st',
+  beval st b = false -> (FOR SKIP ; b ; c DO d END) / st \\ SContinue / st' ->
+  st = st'.
+Proof.
+  intros.
+  remember (FOR SKIP; b; c DO d END)  as loopdef eqn:Heqloopdef.
+  induction H0; try inversion Heqloopdef; try subst.
+  - reflexivity.
+  - inversion H0_. subst.
+    apply IHceval2.
+    apply H. reflexivity.
+  - rewrite H0 in H. inversion H.
+  - rewrite H0 in H. inversion H.
+Qed.
+
+Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
+     c / st \\ s1 / st1 ->
+     c / st \\ s2 / st2 ->
+     st1 = st2 /\ s1 = s2.
+Proof.
+  intros.  generalize dependent st2. generalize dependent s2.
+  induction H.
+  - intros. inversion H0. split; reflexivity.
+  - intros. inversion H0. split; reflexivity.
+  - intros. inversion H0. split; reflexivity.
+  - intros. inversion H1. 
+    + subst. apply IHceval. apply H9.
+    + rewrite H8 in H. inversion H.
+  - intros. inversion H1.
+    + rewrite H8 in H. inversion H.
+    + subst. apply IHceval. apply H9.
+  - intros. inversion H0. subst.
+    + apply IHceval. apply H6.
+    + subst. apply IHceval in H3. destruct H3. inversion H2.
+  - intros. inversion H1.
+    + subst. apply IHceval1 in H7. destruct H7. inversion H3.
+    + subst. apply IHceval1 in H4. destruct H4. subst.
+      apply IHceval2. apply H8.
+  - intros. inversion H0. 
+    + split; reflexivity.
+    + rewrite H3 in H. inversion H.
+    + rewrite H3 in H. inversion H.
+  - intros. inversion H1.
+    + subst. rewrite H7 in H. inversion H.
+    + subst. apply IHceval in H8. destruct H8.
+      split. apply H2. reflexivity.
+    + subst. apply IHceval in H5. destruct H5. inversion H3.
+  - intros. inversion H2.
+    + subst. rewrite H8 in H. inversion H.
+    + subst. apply IHceval1 in H9. destruct H9. inversion H4.
+    + subst. apply IHceval1 in H6. destruct H6. subst.
+      apply IHceval2. apply H10.
+  - intros.
+    apply (for_deterministic _ c d _ st2) in H.
+    split. apply H. apply for_continue in H0. rewrite H0. reflexivity.
+    apply for_continue in H0 as H1. rewrite H1 in H0. apply H0.
+  - intros. inversion H1.
+    + subst. inversion H. apply IHceval2. subst. apply H1.
+    + subst. apply IHceval1 in H9. destruct H9. subst.
+      apply IHceval2 in H10. apply H10.
+    + subst. inversion H. subst. apply IHceval2. apply H1.
+    + subst. inversion H. subst. apply IHceval2. apply H1.
+  - intros. remember (FOR SKIP; b; c DO d END) as loopdef eqn:Heqloopdef.
+    induction H1; try inversion Heqloopdef.
+    + subst. rewrite H1 in H. inversion H.
+    + subst. inversion H1_. subst. apply IHceval2.
+      apply H. apply H0. apply IHceval. reflexivity.
+    + subst. apply IHceval in H2. destruct H2. split. apply H2. reflexivity.
+    + subst. apply IHceval in H1_. destruct H1_. inversion H3.
+  - intros. apply IHceval3. apply for_continue in H3 as H4.
+    rewrite H4.
+    remember (FOR SKIP; b; c DO d END) as loopdef eqn:Heqloopdef.
+    induction H3; try inversion Heqloopdef.
+    + subst. rewrite H3 in H. inversion H.
+    + subst. inversion H3_. subst. apply IHceval5.
+      apply H. apply H0. reflexivity. apply H2. apply IHceval1.
+      apply IHceval3. reflexivity.
+    + subst. apply IHceval1 in H5. destruct H5. inversion H6.
+    + subst. apply IHceval1 in H3_. destruct H3_. subst.
+      apply IHceval2 in H3_0. destruct H3_0. subst.
+      apply IHceval3 in H3_1. destruct H3_1. subst.
+      apply H2.
+Qed.
+  
+
+End ForImp.
 (* FILL IN HERE *)
 (** [] *)
