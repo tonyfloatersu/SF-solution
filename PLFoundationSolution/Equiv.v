@@ -127,7 +127,11 @@ Theorem skip_right: forall c,
     (c ;; SKIP)
     c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros c st st'. split; intros H.
+  - inversion H; subst. inversion H5; subst; assumption.
+  - apply E_Seq with (st := st) (st' := st'); try assumption.
+    apply E_Skip. Qed.
+
 (** [] *)
 
 (** Similarly, here is a simple transformation that optimizes [IFB]
@@ -214,7 +218,10 @@ Theorem IFB_false: forall b c1 c2,
     (IFB b THEN c1 ELSE c2 FI)
     c2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b c1 c2 Hbf. split; intros H.
+  - inversion H; subst; try assumption. rewrite Hbf in H5. inversion H5.
+  - apply E_IfFalse; try assumption. unfold bequiv in Hbf. simpl in *. apply Hbf. Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (swap_if_branches)  *)
@@ -226,7 +233,16 @@ Theorem swap_if_branches: forall b e1 e2,
     (IFB b THEN e1 ELSE e2 FI)
     (IFB BNot b THEN e2 ELSE e1 FI).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b e1 e2 st st'. split; intros H.
+  - inversion H; subst.
+    + apply E_IfFalse; try assumption. simpl. apply negb_false_iff. assumption.
+    + apply E_IfTrue; try assumption. simpl. apply negb_true_iff. assumption.
+  - inversion H; inversion H5; subst.
+    + apply E_IfFalse; try assumption. apply negb_false_iff in H8.
+      rewrite <- negb_involutive_reverse in H8. assumption.
+    + apply E_IfTrue; try assumption. apply negb_true_iff in H8.
+      rewrite <- negb_involutive_reverse in H8. assumption. Qed.
+
 (** [] *)
 
 (** For [WHILE] loops, we can give a similar pair of theorems.  A loop
