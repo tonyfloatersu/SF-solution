@@ -418,7 +418,13 @@ Theorem assign_aequiv : forall (X:string) e,
   aequiv X e ->
   cequiv SKIP (X ::= e).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold cequiv. intros. split; intros H0.
+  - unfold aequiv in H. replace st' with (st & { X --> aeval st e }).
+    + apply E_Ass. reflexivity.
+    + inversion H0; subst. rewrite <- H. simpl. rewrite t_update_same. reflexivity.
+  - unfold aequiv in H. inversion H0; subst. rewrite <- H. simpl. rewrite t_update_same.
+    apply E_Skip. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars (equiv_classes)  *)
