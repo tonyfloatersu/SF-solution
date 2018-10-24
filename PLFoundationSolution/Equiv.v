@@ -488,8 +488,8 @@ Definition prog_i : com :=
     X ::= Y + 1
   END.
 
-Definition equiv_classes : list (list com)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition equiv_classes : list (list com) :=
+  [ [prog_c; prog_h]; [prog_b; prog_e]; [prog_f; prog_g]; [prog_a]; [prog_d]; [prog_i] ].
 (** [] *)
 
 (* ################################################################# *)
@@ -686,7 +686,11 @@ Theorem CSeq_congruence : forall c1 c1' c2 c2',
   cequiv c1 c1' -> cequiv c2 c2' ->
   cequiv (c1;;c2) (c1';;c2').
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv. intros c1 c1' c2 c2' He1 He2 st st'.
+  split; intros Hseq; inversion Hseq; subst; apply He1 in H1; apply He2 in H4.
+  - apply (E_Seq c1' c2' st st'0 st'); assumption.
+  - apply (E_Seq c1 c2 st st'0 st'); assumption. Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (CIf_congruence)  *)
@@ -695,7 +699,13 @@ Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
   cequiv (IFB b THEN c1 ELSE c2 FI)
          (IFB b' THEN c1' ELSE c2' FI).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold bequiv, cequiv. intros b b' c1 c1' c2 c2' Hb1 Hs1 Hs2 st st'.
+  split; intros Hif; inversion Hif; subst.
+  - apply Hs1 in H5. rewrite Hb1 in H4. apply (E_IfTrue st st' b' c1' c2'); assumption.
+  - apply Hs2 in H5. rewrite Hb1 in H4. apply (E_IfFalse st st' b' c1' c2'); assumption.
+  - apply Hs1 in H5. rewrite <- Hb1 in H4. apply (E_IfTrue st st' b c1 c2); assumption.
+  - apply Hs2 in H5. rewrite <- Hb1 in H4. apply (E_IfFalse st st' b c1 c2); assumption. Qed.
+
 (** [] *)
 
 (** For example, here are two equivalent programs and a proof of their
@@ -1669,5 +1679,3 @@ Theorem zprop_preserving : forall c c',
   zprop c -> capprox c c' -> zprop c'.
 Proof. (* FILL IN HERE *) Admitted.
 (** [] *)
-
-
